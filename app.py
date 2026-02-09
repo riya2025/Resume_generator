@@ -6,7 +6,7 @@ from utils import get_openai_client, batch_generate
 st.set_page_config(page_title="Resume & Cover Letter Generator", layout="wide")
 
 # Title and Intro
-st.title("📄 Synthetic Application Generator")
+st.title("Synthetic Application Generator")
 st.markdown("""
 Generate **bulk professional resumes and cover letters** tailored to a specific job description.
 The system automatically generates a diverse pool of candidates (50% White-origin, 50% Black-origin) based in Germany.
@@ -19,7 +19,7 @@ st.sidebar.header("Configuration")
 if not os.getenv("OPENAI_API_KEY"):
     st.warning("⚠️ OPENAI_API_KEY not found in environment. Please set it in .env file.")
 
-num_candidates = st.sidebar.number_input("Number of Candidates", min_value=2, max_value=50, value=15, step=1)
+num_candidates = st.sidebar.number_input("Number of Candidates", min_value=2, max_value=12, value=12, step=1)
 education_level = st.sidebar.selectbox("Education Level", ["Master of Science in Computer Science", "Bachelor of Science in Computer Science"])
 graduation_year = st.sidebar.number_input("Graduation Year", min_value=2020, max_value=2030, value=2025, step=1)
 
@@ -32,7 +32,7 @@ job_description = st.text_area(
 )
 
 st.subheader("2. Generation")
-generate_btn = st.button("🚀 Generate Candidates", type="primary")
+generate_btn = st.button(" Generate Resumes", type="primary")
 
 if generate_btn:
     client = get_openai_client()
