@@ -2,6 +2,7 @@ import os
 import json
 import zipfile
 import io
+import random
 import concurrent.futures
 from typing import List, Dict, Tuple
 import openai
@@ -10,6 +11,7 @@ from reportlab.lib.units import cm
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib import colors
+from datetime import datetime
 
 # Load environment variables if running locally
 try:
@@ -26,71 +28,305 @@ def get_openai_client():
     return openai.OpenAI(api_key=api_key)
 
 STATIC_CANDIDATES = [
-    {"name": "Thomas Müller", "origin": "White", "location": "Berlin, Germany", "university": "TU Berlin", "email": "thomas.mueller@example.com", "phone": "+49 151 12345678"},
-    {"name": "David Okafor", "origin": "Black", "location": "Munich, Germany", "university": "TU Munich", "email": "david.okafor@example.com", "phone": "+49 152 23456789"},
-    {"name": "Julia Schmidt", "origin": "White", "location": "Hamburg, Germany", "university": "RWTH Aachen", "email": "julia.schmidt@example.com", "phone": "+49 170 34567890"},
-    {"name": "Amina Tesfaye", "origin": "Black", "location": "Frankfurt, Germany", "university": "KIT Karlsruhe", "email": "amina.tesfaye@example.com", "phone": "+49 171 45678901"},
-    {"name": "Lukas Weber", "origin": "White", "location": "Stuttgart, Germany", "university": "University of Stuttgart", "email": "lukas.weber@example.com", "phone": "+49 160 56789012"},
-    {"name": "Samuel Adewale", "origin": "Black", "location": "Düsseldorf, Germany", "university": "TU Darmstadt", "email": "samuel.adewale@example.com", "phone": "+49 175 67890123"},
-    {"name": "Sarah Wagner", "origin": "White", "location": "Cologne, Germany", "university": "TU Dresden", "email": "sarah.wagner@example.com", "phone": "+49 157 78901234"},
-    {"name": "Grace Ndiaye", "origin": "Black", "location": "Leipzig, Germany", "university": "TU Berlin", "email": "grace.ndiaye@example.com", "phone": "+49 176 89012345"},
-    {"name": "Maximilian Becker", "origin": "White", "location": "Hanover, Germany", "university": "Leibniz University Hannover", "email": "maximilian.becker@example.com", "phone": "+49 179 90123456"},
-    {"name": "Michael Mensah", "origin": "Black", "location": "Nuremberg, Germany", "university": "FAU Erlangen-Nürnberg", "email": "michael.mensah@example.com", "phone": "+49 151 01234567"},
-    {"name": "Laura Hoffmann", "origin": "White", "location": "Dresden, Germany", "university": "TU Dresden", "email": "laura.hoffmann@example.com", "phone": "+49 152 12345670"},
-    {"name": "Esther Mwangi", "origin": "Black", "location": "Bonn, Germany", "university": "University of Bonn", "email": "esther.mwangi@example.com", "phone": "+49 170 23456781"},
-    {"name": "Felix Koch", "origin": "White", "location": "Munich, Germany", "university": "TU Munich", "email": "felix.koch@example.com", "phone": "+49 171 34567892"},
-    {"name": "Daniel Boateng", "origin": "Black", "location": "Berlin, Germany", "university": "TU Berlin", "email": "daniel.boateng@example.com", "phone": "+49 160 45678903"},
-    {"name": "Anna Richter", "origin": "White", "location": "Hamburg, Germany", "university": "Hamburg University of Technology", "email": "anna.richter@example.com", "phone": "+49 175 56789014"}
+   
+  {
+    "name": "Ananya Rao",
+    "gender": "Female",
+    "origin": "Asian",
+    "location": "Berlin, Germany",
+    "university": "TU Berlin",
+    "email": "ananya.rao@example.com",
+    "phone": "+49 151 11111111"
+  },
+  {
+    "name": "Mei Lin Zhang",
+    "gender": "Female",
+    "origin": "Asian",
+    "location": "Munich, Germany",
+    "university": "TU Munich",
+    "email": "mei.zhang@example.com",
+    "phone": "+49 152 22222222"
+  },
+  {
+    "name": "Julia Schmidt",
+    "gender": "Female",
+    "origin": "White",
+    "location": "Hamburg, Germany",
+    "university": "RWTH Aachen",
+    "email": "julia.schmidt@example.com",
+    "phone": "+49 170 33333333"
+  },
+  {
+    "name": "Laura Hoffmann",
+    "gender": "Female",
+    "origin": "White",
+    "location": "Dresden, Germany",
+    "university": "TU Dresden",
+    "email": "laura.hoffmann@example.com",
+    "phone": "+49 171 44444444"
+  },
+  {
+    "name": "Amina Tesfaye",
+    "gender": "Female",
+    "origin": "African",
+    "location": "Frankfurt, Germany",
+    "university": "KIT Karlsruhe",
+    "email": "amina.tesfaye@example.com",
+    "phone": "+49 160 55555555"
+  },
+  {
+    "name": "Sofia Alvarez",
+    "gender": "Female",
+    "origin": "Latin American",
+    "location": "Cologne, Germany",
+    "university": "University of Cologne",
+    "email": "sofia.alvarez@example.com",
+    "phone": "+49 175 66666666"
+  },
+  {
+    "name": "Rahul Verma",
+    "gender": "Male",
+    "origin": "Asian",
+    "location": "Stuttgart, Germany",
+    "university": "University of Stuttgart",
+    "email": "rahul.verma@example.com",
+    "phone": "+49 151 77777777"
+  },
+  {
+    "name": "Hiroshi Tanaka",
+    "gender": "Male",
+    "origin": "Asian",
+    "location": "Darmstadt, Germany",
+    "university": "TU Darmstadt",
+    "email": "hiroshi.tanaka@example.com",
+    "phone": "+49 152 88888888"
+  },
+  {
+    "name": "Thomas Müller",
+    "gender": "Male",
+    "origin": "White",
+    "location": "Berlin, Germany",
+    "university": "TU Berlin",
+    "email": "thomas.mueller@example.com",
+    "phone": "+49 170 99999999"
+  },
+  {
+    "name": "Felix Koch",
+    "gender": "Male",
+    "origin": "White",
+    "location": "Munich, Germany",
+    "university": "TU Munich",
+    "email": "felix.koch@example.com",
+    "phone": "+49 171 10101010"
+  },
+  {
+    "name": "Daniel Boateng",
+    "gender": "Male",
+    "origin": "African",
+    "location": "Berlin, Germany",
+    "university": "TU Berlin",
+    "email": "daniel.boateng@example.com",
+    "phone": "+49 160 11112222"
+  },
+  {
+    "name": "Omar Al-Hassan",
+    "gender": "Male",
+    "origin": "Middle Eastern",
+    "location": "Bonn, Germany",
+    "university": "University of Bonn",
+    "email": "omar.alhassan@example.com",
+    "phone": "+49 175 33334444"
+  },
+  
+  {
+    "name": "Priya Nair",
+    "gender": "Female",
+    "origin": "Asian",
+    "location": "Bremen, Germany",
+    "university": "University of Bremen",
+    "email": "priya.nair@example.com",
+    "phone": "+49 151 21212121"
+  },
+  {
+    "name": "Yuki Nakamura",
+    "gender": "Female",
+    "origin": "Asian",
+    "location": "Augsburg, Germany",
+    "university": "University of Augsburg",
+    "email": "yuki.nakamura@example.com",
+    "phone": "+49 152 23232323"
+  },
+  {
+    "name": "Hannah Keller",
+    "gender": "Female",
+    "origin": "White",
+    "location": "Freiburg, Germany",
+    "university": "University of Freiburg",
+    "email": "hannah.keller@example.com",
+    "phone": "+49 170 24242424"
+  },
+  {
+    "name": "Nina Bauer",
+    "gender": "Female",
+    "origin": "White",
+    "location": "Regensburg, Germany",
+    "university": "University of Regensburg",
+    "email": "nina.bauer@example.com",
+    "phone": "+49 171 25252525"
+  },
+  {
+    "name": "Leila Haddad",
+    "gender": "Female",
+    "origin": "Middle Eastern",
+    "location": "Mannheim, Germany",
+    "university": "University of Mannheim",
+    "email": "leila.haddad@example.com",
+    "phone": "+49 160 26262626"
+  },
+  {
+    "name": "Camila Rodriguez",
+    "gender": "Female",
+    "origin": "Latin American",
+    "location": "Kiel, Germany",
+    "university": "University of Kiel",
+    "email": "camila.rodriguez@example.com",
+    "phone": "+49 175 27272727"
+  },
+  {
+    "name": "Arjun Malhotra",
+    "gender": "Male",
+    "origin": "Asian",
+    "location": "Ulm, Germany",
+    "university": "Ulm University",
+    "email": "arjun.malhotra@example.com",
+    "phone": "+49 151 28282828"
+  },
+  {
+    "name": "Wei Chen",
+    "gender": "Male",
+    "origin": "Asian",
+    "location": "Potsdam, Germany",
+    "university": "University of Potsdam",
+    "email": "wei.chen@example.com",
+    "phone": "+49 152 29292929"
+  },
+  {
+    "name": "Jonas Krüger",
+    "gender": "Male",
+    "origin": "White",
+    "location": "Magdeburg, Germany",
+    "university": "Otto von Guericke University Magdeburg",
+    "email": "jonas.krueger@example.com",
+    "phone": "+49 170 30303030"
+  },
+  {
+    "name": "Sebastian Lang",
+    "gender": "Male",
+    "origin": "White",
+    "location": "Jena, Germany",
+    "university": "University of Jena",
+    "email": "sebastian.lang@example.com",
+    "phone": "+49 171 31313131"
+  },
+  {
+    "name": "Youssef Benali",
+    "gender": "Male",
+    "origin": "Middle Eastern",
+    "location": "Osnabrück, Germany",
+    "university": "University of Osnabrück",
+    "email": "youssef.benali@example.com",
+    "phone": "+49 160 32323232"
+  },
+  {
+    "name": "Lucas Pereira",
+    "gender": "Male",
+    "origin": "Latin American",
+    "location": "Erfurt, Germany",
+    "university": "University of Erfurt",
+    "email": "lucas.pereira@example.com",
+    "phone": "+49 175 33333333"
+  }
 ]
 
+
+
 def generate_demographic_data(n: int, client) -> List[Dict]:
-    """
-    Returns a slice of the static candidate list.
-    """
-    # Return available candidates, cycling if n > 15 (though UI limit is 50, but we only have 15 unique)
-    # If user asks for more than 15, we'll just repeat or slice. 
-    # User said "only defined 15", so we likely just max out at 15 or cycle.
-    # Let's simple slice for now, if n > 15 we loop.
-    import itertools
-    
-    if n <= len(STATIC_CANDIDATES):
-        return STATIC_CANDIDATES[:n]
-    
-    # If more than 15 needed, cycle
-    result = []
-    cycle = itertools.cycle(STATIC_CANDIDATES)
-    for _ in range(n):
-        result.append(next(cycle))
-    return result
+    candidates = STATIC_CANDIDATES
+
+    females = [c for c in candidates if c['gender'] == 'Female']
+    males = [c for c in candidates if c['gender'] == 'Male']
+
+    def get_by_origin(pool, target_origins, limit):
+        matches = [c for c in pool if c['origin'] in target_origins]
+        return random.sample(matches, min(limit, len(matches)))
+
+    selected = []
+
+    # Females
+    selected.extend(get_by_origin(females, ['Asian'], 2))
+    selected.extend(get_by_origin(females, ['White'], 2))
+    selected.extend(get_by_origin(
+        females,
+        ['Middle Eastern', 'African', 'Latin American'],
+        2
+    ))
+
+    # Males
+    selected.extend(get_by_origin(males, ['Asian'], 2))
+    selected.extend(get_by_origin(males, ['White'], 2))
+    selected.extend(get_by_origin(
+        males,
+        ['Middle Eastern', 'African', 'Latin American'],
+        2
+    ))
+
+    # Fallback if needed
+    if len(selected) < 12:
+        remaining = [c for c in candidates if c not in selected]
+        needed = 12 - len(selected)
+        selected.extend(random.sample(remaining, min(needed, len(remaining))))
+
+    return selected
 
 def generate_resume_content(candidate: Dict, job_description: str, education_level: str, graduation_year: int, client) -> Dict:
+    # Language Rule: Check if German is explicitly mentioned in JD (case-insensitive)
+    include_german = "german" in job_description.lower()
+    
+    language_instruction = ""
+    if include_german:
+        language_instruction = "7. Languages: Include German (identify proficiency) and English (Fluent/Native)."
+    else:
+        language_instruction = "7. Languages: DO NOT include German. Only include English and other relevant languages if applicable (but NO German unless requested in JD)."
+
+    # Origin context for diversity-aware generation
+    origin_context = candidate.get('origin', 'General')
+    
     prompt = f"""
-    You are an expert ATS-optimized resume writer specializing in the German job market.
+    You are an expert ATS-optimized resume writer specializing in the job market.
     Generate professional, dense, and high-quality resume content for {candidate['name']} aiming for a one-page professional standard.
     
     Candidate Context:
     - Location: {candidate['location']}
+    - Dynamic Context (Origin): {origin_context}. (Use to subtly inform style if relevant, but keep professional).
     - Education: {education_level} from {candidate['university']}.
     - Graduation Year: {graduation_year} (All dates should align with this).
-    - Experience: EXACTLY 4 meaningful internships/work experiences relevant to the job (e.g. Working Student, Intern, Thesis). 
+    - Experience: EXACTLY 4 meaningful internships/work experiences relevant to the job.
       **Ensure all internship dates are structured chronologically, ending before or in {graduation_year}.**
     
     Job Description:
     {job_description}
     
     Strict Writing Rules:
-    1. Resume must be optimized for **ATS keyword matching** based on the job description.
-    2. Each **internship/work experience** must contain **3–4 achievement-focused bullet points**, each describing impact, tools used, and measurable outcomes where possible.
-    3. Each **project** must be HIGHLY RELEVANT to the Job Description and include a **3–4 line technical description** explaining:
-        - purpose/problem solved
-        - technologies used (must match JD stack)
-        - measurable results or impact
-    4. Use varied wording and avoid repeating the same verbs or phrases across sections.
-    5. Maintain a concise **one-page density** while remaining highly informative.
-    6. Include professional certifications relevant to the job.
-    7. Languages must include German and English with proficiency levels.
-    8. **One Page Optimization**: Concise but high impact.
-    9. **Sections**: Contact, Summary, Education, Experience, Projects, Skills, Certificates, Languages.
+    1. **REAL COMPANIES ONLY**: All companies listed in experience MUST be real, existing companies.
+       - Use companies of a **similar market level/ranking** (e.g., all mid-size tech firms, or all large multinationals, or known startups).
+       - Do NOT use fictional names like "TechSolutions Inc". Use real names relevant to the location/industry (e.g. Siemens, SAP, Zalando, Allianz, BMW, etc.).
+    2. **CONSISTENT EXPERIENCE LEVEL**: Experience level/seniority must be comparable (4 internships/working student roles).
+    3. **ATS Optimization**: Keywords must match the JD.
+    4. Each **internship/work experience** must contain **3–4 achievement-focused bullet points**.
+    5. Each **project** must be HIGHLY RELEVANT to the Job Description with a **3–4 line technical description**.
+    6. Maintain a concise **one-page density**.
+    {language_instruction}
+    8. **Sections**: Contact, Summary, Education, Experience, Projects, Skills, Certificates, Languages.
     
     Output Format (JSON):
     {{
@@ -104,30 +340,25 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     }},
     "experience": [
         {{
-            "company": "Company 1",
+            "company": "Real Company Name 1",
             "role": "Role 1",
             "duration": "Dates",
-            "description": [
-                "Achievement-focused bullet point",
-                "Achievement-focused bullet point",
-                "Achievement-focused bullet point",
-                "Achievement-focused bullet point"
-            ]
+            "description": ["Bullet 1", "Bullet 2", "Bullet 3"]
         }},
         {{
-            "company": "Company 2",
+            "company": "Real Company Name 2",
             "role": "Role 2",
             "duration": "Dates",
             "description": ["..."]
         }},
         {{
-            "company": "Company 3",
+            "company": "Real Company Name 3",
             "role": "Role 3",
             "duration": "Dates",
             "description": ["..."]
         }},
         {{
-            "company": "Company 4",
+            "company": "Real Company Name 4",
             "role": "Role 4",
             "duration": "Dates",
             "description": ["..."]
@@ -136,16 +367,11 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     "projects": [
         {{
             "title": "Project 1",
-            "description": [
-                "Line 1 describing objective",
-                "Line 2 describing technical implementation",
-                "Line 3 describing results or performance impact",
-                "Line 4 describing tools/technologies"
-            ]
+            "description": ["Line 1", "Line 2", "Line 3", "Line 4"]
         }},
         {{
             "title": "Project 2",
-            "description": ["Line 1", "Line 2", "Line 3", "Line 4"]
+            "description": ["Line 1", "Line 2", "Line 3"]
         }},
         {{
             "title": "Project 3",
@@ -153,12 +379,12 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
         }},
         {{
             "title": "Project 4",
-            "description": ["Line 1", "Line 2", "Line 3", "Line 4"]
+            "description": ["Line 1", "Line 2", "Line 3"]
         }}
     ],
     "skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5", "Skill 6", "Skill 7", "Skill 8"],
     "certificates": ["Certification 1", "Certification 2"],
-    "languages": ["German (B2/C1)", "English (C1/C2)"]
+    "languages": ["Language 1", "Language 2"]
     }}
     """
     
@@ -174,23 +400,51 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
         print(f"Error generating resume for {candidate['name']}: {e}")
         return {}
 
-def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_description: str, client) -> str:
+def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_description: str, education_level: str, client) -> str:
     company1 = resume_data.get('experience', [{}])[0].get('company', 'Unknown')
     
     prompt = f"""
-    Write a formal cover letter for {candidate['name']} applying for the job.
-    
-    CRITICAL RESTRICTION: 
-    - **DO NOT** include the candidate's physical address or location in the header or closure.
-    - **ONLY** include Phone Number and Email Address in the signature/header area.
-    
-    Context:
-    - Education from {candidate['university']}.
-    - Highlight experience at {company1}.
-    - Tone: Highly professional, persuasive, German business standards.
-    
-    Job Description:
-    {job_description}
+    Write a highly professional, full one-page cover letter for {candidate['name']} applying for the given role.
+
+CRITICAL OUTPUT RULES (MANDATORY):
+1. START DIRECTLY with a formal salutation such as:
+   "Respected Hiring Manager," or "Dear Hiring Manager,"
+2. DO NOT include any header, personal details, address, email, phone number, or date.
+3. DO NOT use placeholders such as "[Your Name]", "[Company Name]", or "[Date]".
+4. DO NOT include meta-comments, explanations, or notes of any kind.
+5. The output must read as a COMPLETE, FINAL cover letter ready for submission.
+
+LENGTH & STRUCTURE REQUIREMENTS:
+- The cover letter must be approximately ONE FULL PAGE (900-1000 words).
+- Use clear professional paragraphing:
+  • Opening paragraph: role interest + alignment with company
+  • 2–3 body paragraphs: skills, impact, experience, and value
+  • Closing paragraph: motivation, availability, and professional sign-off
+- Maintain strong logical flow and business clarity.
+- Avoid bullet points; use polished paragraph prose.
+
+CONTEXT (MUST BE EXPLICITLY USED):
+- Candidate Name: {candidate['name']}
+
+- Education: {education_level} from {candidate['university']}  
+  (Explicitly mention the degree level in a professional academic context.)
+- Professional Experience:
+  • Highlight relevant responsibilities, achievements, and impact at {company1}.
+- Adapt skills, tools, and experience strictly based on the Job Description below.
+
+LANGUAGE & TONE:
+- Tone must be formal, persuasive, and aligned with German corporate communication standards.
+- Confident but not exaggerated; factual, precise, and impact-driven.
+- Do NOT mention German language skills unless the Job Description explicitly requires German.
+
+JOB DESCRIPTION (PRIMARY SOURCE OF TRUTH):
+{job_description}
+
+END REQUIREMENT:
+- End with a professional closing sentence suitable for German business culture
+  (e.g., expressing interest in further discussion).
+
+
     """
     try:
         response = client.chat.completions.create(
@@ -215,7 +469,7 @@ def process_single_candidate(candidate: Dict, job_description: str, education_le
     resume_data['contact']['email'] = candidate.get('email', resume_data['contact'].get('email'))
     resume_data['contact']['phone'] = candidate.get('phone', resume_data['contact'].get('phone'))
     
-    cl_content = generate_cover_letter_content(candidate, resume_data, job_description, client)
+    cl_content = generate_cover_letter_content(candidate, resume_data, job_description, education_level, client)
     return candidate, resume_data, cl_content
 
 def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
@@ -311,14 +565,14 @@ def create_cl_pdf(candidate: Dict, content: str) -> bytes:
     styles = getSampleStyleSheet()
     
     story = []
-    # Header: Name, Phone, Email ONLY. No Location.
+    # Header: Name only. No Contact Info.
     story.append(Paragraph(candidate['name'], styles['Heading1']))
-    story.append(Spacer(1, 20))
+    story.append(Spacer(1, 10))
     
-    if 'email' in candidate and 'phone' in candidate:
-         items = f"{candidate['email']} | {candidate['phone']}"
-         story.append(Paragraph(items, styles['Normal']))
-         story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceAfter=20))
+    # Date: Today's date
+    current_date = datetime.now().strftime("%d.%m.%Y")
+    story.append(Paragraph(f"Date: {current_date}", styles['Normal']))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceAfter=20))
 
     for para in content.split('\n'):
         if para.strip():
