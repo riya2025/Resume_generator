@@ -12,6 +12,23 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib import colors
 from datetime import datetime
+import re
+
+def clean_text_formatting(text: str) -> str:
+    """
+    Converts Markdown-style formatting (*, **, _) to ReportLab-compatible XML tags.
+    """
+    if not isinstance(text, str):
+        return str(text)
+        
+    # Bold: **text** -> <b>text</b>
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+    
+    # Italics: *text* or _text_ -> <i>text</i>
+    text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)
+    text = re.sub(r'_(.*?)_', r'<i>\1</i>', text)
+    
+    return text
 
 # Load environment variables if running locally
 try:
@@ -248,6 +265,37 @@ STATIC_CANDIDATES = [
   }
 ]
 
+COMPANY_POOL = [
+    "SAP", "Siemens", "Allianz", "BMW", "Mercedes-Benz", "Volkswagen", "Deutsche Bank", 
+    "Adidas", "Puma", "BASF", "Bayer", "Merck", "Deutsche Telekom", "E.ON", "Infineon", 
+    "Zalando", "HelloFresh", "N26", "Delivery Hero", "Personio", "Celonis", "Trade Republic", 
+    "Gorillas", "Flink", "Auto1", "Trivago", "Xing", "Soundcloud", "Babbel", "Tier", 
+    "Voi", "Lilium", "Volocopter", "FlixBus", "Lufthansa", "Airbus", "Bosch", 
+    "Continental", "Henkel", "Beiersdorf", "Audi", "Porsche", "DHL", "Commerzbank",
+    "Munich Re", "RWE", "ThyssenKrupp", "HeidelbergCement", "Fresenius", "Covestro"
+]
+
+def get_random_theme():
+    """Generates a random design theme for Resume and Cover Letter."""
+    colors_list = [
+        colors.darkblue, colors.darkslategray, colors.black, colors.darkgreen, 
+        colors.darkred, colors.navy, colors.midnightblue, colors.teal,
+        colors.firebrick, colors.seagreen, colors.indigo, colors.dimgray,
+        colors.brown, colors.purple, colors.darkorange
+    ]
+    fonts_list = ['Helvetica-Bold', 'Times-Bold', 'Courier-Bold']
+    
+    return {
+        'resume_header_color': random.choice(colors_list),
+        'resume_company_style': random.choice(['Italic', 'Bold']),
+        'resume_name_font': random.choice(['Helvetica-Bold', 'Times-Bold']),
+        'resume_name_alignment': random.choice([0, 1]), # 0=Left, 1=Center
+        'resume_header_case': random.choice(['UPPER', 'Title']), # UPPER or Title Case
+        'cl_header_alignment': random.choice([0, 1]), # 0=Left, 1=Center
+        'cl_header_font': random.choice(fonts_list),
+        'cl_header_color': random.choice(colors_list)
+    }
+
 
 
 def generate_demographic_data(n: int, client) -> List[Dict]:
@@ -294,9 +342,12 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     
     language_instruction = ""
     if include_german:
-        language_instruction = "7. Languages: Include German (identify proficiency) and English (Fluent/Native)."
+        language_instruction = "7. Languages: Include **German (C1)** and **English (C1/Fluent)**."
     else:
         language_instruction = "7. Languages: DO NOT include German. Only include English and other relevant languages if applicable (but NO German unless requested in JD)."
+
+    # Company injection
+    suggested_companies = ", ".join(random.sample(COMPANY_POOL, 8))
 
     # Origin context for diversity-aware generation
     origin_context = candidate.get('origin', 'General')
@@ -318,8 +369,9 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     
     Strict Writing Rules:
     1. **REAL COMPANIES ONLY**: All companies listed in experience MUST be real, existing companies.
-       - Use companies of a **similar market level/ranking** (e.g., all mid-size tech firms, or all large multinationals, or known startups).
-       - Do NOT use fictional names like "TechSolutions Inc". Use real names relevant to the location/industry (e.g. Siemens, SAP, Zalando, Allianz, BMW, etc.).
+       - Use companies of a **similar market level/ranking**.
+       - Suggested companies to draw from (or use similar): {suggested_companies}.
+       - Do NOT use fictional names like "TechSolutions Inc". Use real names relevant to the location/industry.
     2. **CONSISTENT EXPERIENCE LEVEL**: Experience level/seniority must be comparable (4 internships/working student roles).
     3. **ATS Optimization**: Keywords must match the JD.
     4. Each **internship/work experience** must contain **3–4 achievement-focused bullet points**.
@@ -386,6 +438,26 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     "certificates": ["Certification 1", "Certification 2"],
     "languages": ["Language 1", "Language 2"]
     }}
+    9. TEMPLATE VARIATION & FORMATTING:
+- Each generated resume must follow a VISUALLY DISTINCT formatting template style.
+- You MAY use **HTML tags** for formatting within the text strings:
+  • Use <b>text</b> for bold (e.g., <b>Company Name</b>).
+  • Use <i>text</i> for italics (e.g., <i>Role Title</i>).
+  • DO NOT use Markdown (like ** or _). Use ONLY <b> and <i> tags.
+  
+- Vary formatting elements such as:
+  • Company names in <b>bold</b>.
+  • Role titles in <i>italics</i>.
+  • Section headers in ALL CAPS or Title Case.
+  • Use different separator styles (|, •, —).
+  
+- IMPORTANT:
+  • JSON structure must remain EXACTLY the same.
+  • Formatting tags (<bold>, <italic>) should appear ONLY inside string values.
+  • Maintain ATS compatibility.
+
+
+
     """
     
     try:
@@ -435,7 +507,7 @@ CONTEXT (MUST BE EXPLICITLY USED):
 LANGUAGE & TONE:
 - Tone must be formal, persuasive, and aligned with German corporate communication standards.
 - Confident but not exaggerated; factual, precise, and impact-driven.
-- Do NOT mention German language skills unless the Job Description explicitly requires German.
+- **DO NOT MENTION LANGUAGE SKILLS**. Do not say "I speak English" or "I speak German". Focus ONLY on technical/domain skills.
 
 JOB DESCRIPTION (PRIMARY SOURCE OF TRUTH):
 {job_description}
@@ -456,10 +528,11 @@ END REQUIREMENT:
         print(f"Error generating cover letter for {candidate['name']}: {e}")
         return "Error generating cover letter."
 
-def process_single_candidate(candidate: Dict, job_description: str, education_level: str, graduation_year: int, client) -> Tuple[Dict, Dict, str]:
+def process_single_candidate(candidate: Dict, job_description: str, education_level: str, graduation_year: int, client) -> Tuple[Dict, Dict, str, Dict]:
     """
     Process a single candidate to generate both resume and cover letter content.
     """
+    theme = get_random_theme()
     resume_data = generate_resume_content(candidate, job_description, education_level, graduation_year, client)
     
     # Overwrite/Ensure contact info comes from the static candidate data
@@ -470,9 +543,9 @@ def process_single_candidate(candidate: Dict, job_description: str, education_le
     resume_data['contact']['phone'] = candidate.get('phone', resume_data['contact'].get('phone'))
     
     cl_content = generate_cover_letter_content(candidate, resume_data, job_description, education_level, client)
-    return candidate, resume_data, cl_content
+    return candidate, resume_data, cl_content, theme
 
-def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
+def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
     buffer = io.BytesIO()
     # Reduce margins to fit more on one page
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1.5*cm, leftMargin=1.5*cm, topMargin=1.5*cm, bottomMargin=1.5*cm)
@@ -480,14 +553,20 @@ def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
     
     # Custom Styles
     styles.add(ParagraphStyle(name='JobTitle', parent=styles['Heading2'], spaceAfter=1, fontSize=11, leading=13))
-    styles.add(ParagraphStyle(name='SectionHeader', parent=styles['Heading2'], fontSize=12, spaceAfter=4, spaceBefore=6, textColor=colors.darkblue))
+    styles.add(ParagraphStyle(name='SectionHeader', parent=styles['Heading2'], fontSize=12, spaceAfter=4, spaceBefore=6, textColor=theme['resume_header_color']))
     styles.add(ParagraphStyle(name='NormalSmall', parent=styles['Normal'], fontSize=9, leading=11))
     styles.add(ParagraphStyle(name='Date', parent=styles['Normal'], fontSize=8, textColor=colors.gray))
     
     story = []
     
     # Header
-    story.append(Paragraph(candidate['name'], styles['Heading1']))
+    name_style = ParagraphStyle(
+        name='NameHeader', 
+        parent=styles['Heading1'], 
+        fontName=theme['resume_name_font'],
+        alignment=theme['resume_name_alignment']
+    )
+    story.append(Paragraph(candidate['name'], name_style))
     # Contact info: Email | Phone (No location if user doesn't want address here, but Resume usually has it. 
     # User said "remove proving adress in cover letter", didn't explicitly remove from Resume, but I'll stick to Email/Phone/City for Resume to look pro)
     contact_info = f"{data.get('contact', {}).get('email', '')} | {data.get('contact', {}).get('phone', '')} | {candidate['location']}"
@@ -496,35 +575,39 @@ def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
     
     # Summary
     if 'summary' in data:
-        story.append(Paragraph("Professional Summary", styles['SectionHeader']))
+        header_text = "PROFESSIONAL SUMMARY" if theme.get('resume_header_case') == 'UPPER' else "Professional Summary"
+        story.append(Paragraph(header_text, styles['SectionHeader']))
         story.append(Paragraph(data['summary'], styles['NormalSmall']))
     
     # Experience
     if 'experience' in data:
-        story.append(Paragraph("Professional Experience", styles['SectionHeader']))
+        header_text = "PROFESSIONAL EXPERIENCE" if theme.get('resume_header_case') == 'UPPER' else "Professional Experience"
+        story.append(Paragraph(header_text, styles['SectionHeader']))
         for job in data['experience']:
-            story.append(Paragraph(f"<b>{job.get('role', 'Role')}</b> at {job.get('company', 'Company')}", styles['NormalSmall']))
+            company_style = f"<i>{job.get('company', 'Company')}</i>" if theme['resume_company_style'] == 'Italic' else f"<b>{job.get('company', 'Company')}</b>"
+            story.append(Paragraph(f"<b>{job.get('role', 'Role')}</b> at {company_style}", styles['NormalSmall']))
             story.append(Paragraph(f"{job.get('duration', '')}", styles['Date']))
             
             desc = job.get('description', [])
             if isinstance(desc, list):
                 for item in desc:
-                    story.append(Paragraph(f"• {item}", styles['NormalSmall']))
+                    story.append(Paragraph(f"• {clean_text_formatting(item)}", styles['NormalSmall']))
             else:
-                story.append(Paragraph(str(desc), styles['NormalSmall']))
+                story.append(Paragraph(clean_text_formatting(str(desc)), styles['NormalSmall']))
             story.append(Spacer(1, 4))
     
     # Projects
     if 'projects' in data:
-        story.append(Paragraph("Key Projects", styles['SectionHeader']))
+        header_text = "KEY PROJECTS" if theme.get('resume_header_case') == 'UPPER' else "Key Projects"
+        story.append(Paragraph(header_text, styles['SectionHeader']))
         for proj in data['projects']:
             # Title: Description
             # Handle user provided format which is a list of strings in description
             desc_text = ""
             if isinstance(proj.get('description'), list):
-                 desc_text = "<br/>".join([f"• {line}" for line in proj['description']])
+                 desc_text = "<br/>".join([f"• {clean_text_formatting(line)}" for line in proj['description']])
             else:
-                 desc_text = proj.get('description', '')
+                 desc_text = clean_text_formatting(proj.get('description', ''))
                  
             text = f"<b>{proj.get('title', 'Project')}</b>:<br/>{desc_text}"
             story.append(Paragraph(text, styles['NormalSmall']))
@@ -532,7 +615,8 @@ def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
 
     # Education
     if 'education' in data:
-        story.append(Paragraph("Education", styles['SectionHeader']))
+        header_text = "EDUCATION" if theme.get('resume_header_case') == 'UPPER' else "Education"
+        story.append(Paragraph(header_text, styles['SectionHeader']))
         edu = data['education']
         story.append(Paragraph(f"<b>{edu.get('degree', 'Degree')}</b>", styles['NormalSmall']))
         story.append(Paragraph(f"{edu.get('university', 'University')} | {edu.get('year', '')}", styles['Date']))
@@ -541,7 +625,8 @@ def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
         
     # Skills & Certificates
     if 'skills' in data or 'certificates' in data:
-        story.append(Paragraph("Skills & Certificates", styles['SectionHeader']))
+        header_text = "SKILLS & CERTIFICATES" if theme.get('resume_header_case') == 'UPPER' else "Skills & Certificates"
+        story.append(Paragraph(header_text, styles['SectionHeader']))
         if 'skills' in data:
             skills_str = "<b>Skills:</b> " + ", ".join(data['skills'])
             story.append(Paragraph(skills_str, styles['NormalSmall']))
@@ -559,14 +644,21 @@ def create_resume_pdf(candidate: Dict, data: Dict) -> bytes:
     buffer.seek(0)
     return buffer.getvalue()
 
-def create_cl_pdf(candidate: Dict, content: str) -> bytes:
+def create_cl_pdf(candidate: Dict, content: str, theme: Dict) -> bytes:
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2.5*cm, leftMargin=2.5*cm, topMargin=2.5*cm, bottomMargin=2.5*cm)
     styles = getSampleStyleSheet()
     
     story = []
-    # Header: Name only. No Contact Info.
-    story.append(Paragraph(candidate['name'], styles['Heading1']))
+    # Header: Name only. 
+    header_style = ParagraphStyle(
+        name='CLHeader', 
+        parent=styles['Heading1'], 
+        alignment=theme['cl_header_alignment'], 
+        textColor=theme['cl_header_color'],
+        fontName=theme['cl_header_font']
+    )
+    story.append(Paragraph(candidate['name'], header_style))
     story.append(Spacer(1, 10))
     
     # Date: Today's date
@@ -602,7 +694,7 @@ def batch_generate(job_description: str, count: int, education_level: str, gradu
         
         for future in concurrent.futures.as_completed(futures):
             try:
-                res = future.result() # returns (candidate, resume_data, cl_content)
+                res = future.result() # returns (candidate, resume_data, cl_content, theme)
                 results.append(res)
             except Exception as e:
                 print(f"Job failed: {e}")
@@ -610,7 +702,7 @@ def batch_generate(job_description: str, count: int, education_level: str, gradu
     # Create ZIP
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "a", compression=zipfile.ZIP_DEFLATED, allowZip64=True) as zf:
-        for cand, resume_data, cl_content in results:
+        for cand, resume_data, cl_content, theme in results:
             safe_name = "".join([c for c in cand['name'] if c.isalpha() or c.isspace()]).strip().replace(" ", "_")
             
             # Enrich candidate with contact info for CL PDF if available
@@ -620,14 +712,14 @@ def batch_generate(job_description: str, count: int, education_level: str, gradu
 
             # Resume
             try:
-                resume_bytes = create_resume_pdf(cand, resume_data)
+                resume_bytes = create_resume_pdf(cand, resume_data, theme)
                 zf.writestr(f"Resumes/{safe_name}_Resume.pdf", resume_bytes)
             except Exception as e:
                 print(f"Error creating resume PDF for {cand['name']}: {e}")
 
             # Cover Letter
             try:
-                cl_bytes = create_cl_pdf(cand, cl_content)
+                cl_bytes = create_cl_pdf(cand, cl_content, theme)
                 zf.writestr(f"Cover_Letters/{safe_name}_CoverLetter.pdf", cl_bytes)
             except Exception as e:
                 print(f"Error creating CL PDF for {cand['name']}: {e}")
