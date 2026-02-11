@@ -13,7 +13,7 @@ The system automatically generates a diverse pool of candidates (50% White-origi
 """)
 
 # Sidebar settings
-# Sidebar settings
+
 st.sidebar.header("Configuration")
 # API Key is expected to be in .env or environment variables
 if not os.getenv("OPENAI_API_KEY"):
