@@ -275,6 +275,59 @@ COMPANY_POOL = [
     "Munich Re", "RWE", "ThyssenKrupp", "HeidelbergCement", "Fresenius", "Covestro"
 ]
 
+COUNTRY_DATA = {
+    "Germany": {
+        "cities": ["Berlin", "Munich", "Hamburg", "Frankfurt", "Stuttgart"],
+        "universities": ["TU Munich", "TU Berlin", "RWTH Aachen", "KIT Karlsruhe", "University of Heidelberg"],
+        "companies": [
+            "SAP", "Siemens", "BMW", "Allianz", "Volkswagen", "Mercedes-Benz", "Deutsche Telekom", 
+            "BASF", "Bayer", "Munich Re", "Deutsche Bank", "Porsche", "Adidas", "Bosch", 
+            "DHL", "Continental", "E.ON", "Infineon", "Henkel", "ThyssenKrupp"
+        ],
+        "language": "German"
+    },
+    "France": {
+        "cities": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"],
+        "universities": ["Sorbonne University", "Ecole Polytechnique", "Université PSL", "Telecom Paris", "CentraleSupélec"],
+        "companies": [
+            "L'Oréal", "TotalEnergies", "Sanofi", "AXA", "BNP Paribas", "Capgemini", "Dassault Systèmes", 
+            "Orange", "LVMH", "Airbus", "Michelin", "Renault", "Danone", "Kering", 
+            "Schneider Electric", "Société Générale", "Crédit Agricole", "Engie", "Carrefour", "Vinci"
+        ],
+        "language": "French"
+    },
+    "Italy": {
+        "cities": ["Rome", "Milan", "Naples", "Turin", "Florence"],
+        "universities": ["Politecnico di Milano", "Sapienza University of Rome", "University of Bologna", "University of Padua", "Politecnico di Torino"],
+        "companies": [
+            "Enel", "Eni", "Stellantis", "Intesa Sanpaolo", "Leonardo", "Pirelli", "Ferrari", "Prada", 
+            "UniCredit", "Telecom Italia", "Generali", "Poste Italiane", "Ferrero", "Barilla", 
+            "Luxottica", "Campari", "Snam", "Terna", "Prysmian", "Armani"
+        ],
+        "language": "Italian"
+    },
+    "Netherlands": {
+        "cities": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"],
+        "universities": ["Delft University of Technology", "University of Amsterdam", "Eindhoven University of Technology", "Leiden University", "Utrecht University"],
+        "companies": [
+            "ASML", "Philips", "Shell", "Unilever", "Heineken", "Adyen", "Booking.com", "ING", 
+            "Ahold Delhaize", "KPN", "NXP Semiconductors", "Randstad", "Aegon", "AkzoNobel", 
+            "Rabobank", "DSM-Firmenich", "Just Eat Takeaway", "NN Group", "TomTom", "KLM"
+        ],
+        "language": "Dutch"
+    },
+    "Finland": {
+        "cities": ["Helsinki", "Espoo", "Tampere", "Vantaa", "Oulu"],
+        "universities": ["University of Helsinki", "Aalto University", "Tampere University", "University of Oulu", "University of Turku"],
+        "companies": [
+            "Nokia", "Kone", "Wärtsilä", "Neste", "Stora Enso", "Supercell", "Rovio", "Tietoevry", 
+            "UPM-Kymmene", "Sampo Group", "Nordea", "Fortum", "Kesko", "Valmet", 
+            "Huhtamäki", "Outokumpu", "Cargotec", "Fazer", "Orion", "Kemira"
+        ],
+        "language": "Finnish"
+    }
+}
+
 def get_random_theme():
     """Generates a random design theme for Resume and Cover Letter."""
     colors_list = [
@@ -311,43 +364,45 @@ def generate_demographic_data(n: int, client) -> List[Dict]:
     selected = []
 
     # Females
-    selected.extend(get_by_origin(females, ['Asian'], 2))
-    selected.extend(get_by_origin(females, ['White'], 2))
+    selected.extend(get_by_origin(females, ['Asian'], 1))
+    selected.extend(get_by_origin(females, ['White'], 1))
     selected.extend(get_by_origin(
         females,
         ['Middle Eastern', 'African', 'Latin American'],
-        2
+        1
     ))
 
     # Males
-    selected.extend(get_by_origin(males, ['Asian'], 2))
-    selected.extend(get_by_origin(males, ['White'], 2))
+    selected.extend(get_by_origin(males, ['Asian'], 1))
+    selected.extend(get_by_origin(males, ['White'], 1))
     selected.extend(get_by_origin(
         males,
         ['Middle Eastern', 'African', 'Latin American'],
-        2
+        1
     ))
 
     # Fallback if needed
-    if len(selected) < 12:
+    if len(selected) < 6:
         remaining = [c for c in candidates if c not in selected]
-        needed = 12 - len(selected)
+        needed = 6 - len(selected)
         selected.extend(random.sample(remaining, min(needed, len(remaining))))
 
     return selected
 
-def generate_resume_content(candidate: Dict, job_description: str, education_level: str, graduation_year: int, client) -> Dict:
-    # Language Rule: Check if German is explicitly mentioned in JD (case-insensitive)
-    include_german = "german" in job_description.lower()
+def generate_resume_content(candidate: Dict, job_description: str, education_level: str, graduation_year: int, target_country: str, client) -> Dict:
+    # Language Rule: Check if target language is explicitly mentioned in JD (case-insensitive)
+    target_lang = COUNTRY_DATA[target_country]["language"]
+    include_lang = target_lang.lower() in job_description.lower()
     
-    language_instruction = ""
-    if include_german:
-        language_instruction = "7. Languages: Include **German (C1)** and **English (C1/Fluent)**."
+    if include_lang:
+        language_instruction = f"7. Languages: Include **{target_lang} (C1)** and **English (C1/Fluent)**."
     else:
-        language_instruction = "7. Languages: DO NOT include German. Only include English and other relevant languages if applicable (but NO German unless requested in JD)."
+        language_instruction = f"7. Languages: DO NOT include {target_lang}. Only include English and other relevant languages if applicable (but NO {target_lang} unless requested in JD)."
 
     # Company injection
-    suggested_companies = ", ".join(random.sample(COMPANY_POOL, 8))
+    base_companies = random.sample(COMPANY_POOL, 4)
+    country_companies = random.sample(COUNTRY_DATA[target_country]["companies"], min(4, len(COUNTRY_DATA[target_country]["companies"])))
+    suggested_companies = ", ".join(country_companies + base_companies)
 
     # Origin context for diversity-aware generation
     origin_context = candidate.get('origin', 'General')
@@ -360,6 +415,8 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     - Location: {candidate['location']}
     - Dynamic Context (Origin): {origin_context}. (Use to subtly inform style if relevant, but keep professional).
     - Education: {education_level} from {candidate['university']}.
+      **If the education level is a Master's degree, strongly ensure you add a "Bachelor of Science in Computer Science" from a real {target_country} university as an additional item in the education array.**
+      **If the education level is already a Bachelor's degree, ensure it is strictly named "Bachelor of Science in Computer Science".**
     - Graduation Year: {graduation_year} (All dates should align with this).
     - Experience: EXACTLY 4 meaningful internships/work experiences relevant to the job.
       **Ensure all internship dates are structured chronologically, ending before or in {graduation_year}.**
@@ -384,18 +441,20 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     {{
     "contact": {{ "email": "email_address", "phone": "phone_number" }},
     "summary": "3–4 line ATS-optimized professional summary tailored to the job.",
-    "education": {{
-        "degree": "{education_level}",
-        "university": "{candidate['university']}",
-        "year": "{graduation_year}",
-        "details": "Relevant coursework or specialization"
-    }},
+    "education": [
+        {{
+            "degree": "{education_level}",
+            "university": "{candidate['university']}",
+            "year": "{graduation_year}",
+            "details": "Relevant coursework or specialization"
+        }}
+    ],
     "experience": [
         {{
             "company": "Real Company Name 1",
             "role": "Role 1",
             "duration": "Dates",
-            "description": ["Bullet 1", "Bullet 2", "Bullet 3"]
+            "description": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"]
         }},
         {{
             "company": "Real Company Name 2",
@@ -413,25 +472,25 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
             "company": "Real Company Name 4",
             "role": "Role 4",
             "duration": "Dates",
-            "description": ["..."]
+            "description": ["Bullet 1", "Bullet 2", "Bullet 3", "Bullet 4"]
         }}
     ],
     "projects": [
         {{
             "title": "Project 1",
-            "description": ["Line 1", "Line 2", "Line 3", "Line 4"]
+            "description": ["Line 1", "Line 2", "Line 3"]
         }},
         {{
             "title": "Project 2",
-            "description": ["Line 1", "Line 2", "Line 3"]
-        }},
-        {{
-            "title": "Project 3",
             "description": ["Line 1", "Line 2", "Line 3", "Line 4"]
         }},
         {{
-            "title": "Project 4",
+            "title": "Project 3",
             "description": ["Line 1", "Line 2", "Line 3"]
+        }},
+        {{
+            "title": "Project 4",
+            "description": ["Line 1", "Line 2", "Line 3", "Line 4"]
         }}
     ],
     "skills": ["Skill 1", "Skill 2", "Skill 3", "Skill 4", "Skill 5", "Skill 6", "Skill 7", "Skill 8"],
@@ -472,7 +531,7 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
         print(f"Error generating resume for {candidate['name']}: {e}")
         return {}
 
-def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_description: str, education_level: str, client) -> str:
+def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_description: str, education_level: str, target_country: str, client) -> str:
     company1 = resume_data.get('experience', [{}])[0].get('company', 'Unknown')
     
     prompt = f"""
@@ -499,13 +558,13 @@ CONTEXT (MUST BE EXPLICITLY USED):
 - Candidate Name: {candidate['name']}
 
 - Education: {education_level} from {candidate['university']}  
-  (Explicitly mention the degree level in a professional academic context.)
+  (Explicitly mention the degree level in a professional academic context. If the education level is a Master's degree, you MUST also explicitly mention their "Bachelor of Science in Computer Science" from a real {target_country} university. If they have a Bachelor's, refer to it strictly as "Bachelor of Science in Computer Science".)
 - Professional Experience:
   • Highlight relevant responsibilities, achievements, and impact at {company1}.
 - Adapt skills, tools, and experience strictly based on the Job Description below.
 
 LANGUAGE & TONE:
-- Tone must be formal, persuasive, and aligned with German corporate communication standards.
+- Tone must be formal, persuasive, and aligned with {target_country} corporate communication standards.
 - Confident but not exaggerated; factual, precise, and impact-driven.
 - **DO NOT MENTION LANGUAGE SKILLS**. Do not say "I speak English" or "I speak German". Focus ONLY on technical/domain skills.
 
@@ -513,7 +572,7 @@ JOB DESCRIPTION (PRIMARY SOURCE OF TRUTH):
 {job_description}
 
 END REQUIREMENT:
-- End with a professional closing sentence suitable for German business culture
+- End with a professional closing sentence suitable for {target_country} business culture
   (e.g., expressing interest in further discussion).
 
 
@@ -528,12 +587,20 @@ END REQUIREMENT:
         print(f"Error generating cover letter for {candidate['name']}: {e}")
         return "Error generating cover letter."
 
-def process_single_candidate(candidate: Dict, job_description: str, education_level: str, graduation_year: int, client) -> Tuple[Dict, Dict, str, Dict]:
+def process_single_candidate(candidate: Dict, job_description: str, education_level: str, graduation_year: int, target_country: str, client) -> Tuple[Dict, Dict, str, Dict]:
     """
     Process a single candidate to generate both resume and cover letter content.
     """
+    import copy
+    candidate = copy.deepcopy(candidate)
+    
+    # Override candidate location and university
+    c_data = COUNTRY_DATA[target_country]
+    candidate['location'] = f"{random.choice(c_data['cities'])}, {target_country}"
+    candidate['university'] = random.choice(c_data['universities'])
+    
     theme = get_random_theme()
-    resume_data = generate_resume_content(candidate, job_description, education_level, graduation_year, client)
+    resume_data = generate_resume_content(candidate, job_description, education_level, graduation_year, target_country, client)
     
     # Overwrite/Ensure contact info comes from the static candidate data
     if 'contact' not in resume_data:
@@ -542,20 +609,20 @@ def process_single_candidate(candidate: Dict, job_description: str, education_le
     resume_data['contact']['email'] = candidate.get('email', resume_data['contact'].get('email'))
     resume_data['contact']['phone'] = candidate.get('phone', resume_data['contact'].get('phone'))
     
-    cl_content = generate_cover_letter_content(candidate, resume_data, job_description, education_level, client)
+    cl_content = generate_cover_letter_content(candidate, resume_data, job_description, education_level, target_country, client)
     return candidate, resume_data, cl_content, theme
 
 def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
     buffer = io.BytesIO()
-    # Reduce margins to fit more on one page
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1.5*cm, leftMargin=1.5*cm, topMargin=1.5*cm, bottomMargin=1.5*cm)
+    # Drastically reduce margins to fit more on one page
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=1.0*cm, leftMargin=1.0*cm, topMargin=1.0*cm, bottomMargin=1.0*cm)
     styles = getSampleStyleSheet()
     
     # Custom Styles
-    styles.add(ParagraphStyle(name='JobTitle', parent=styles['Heading2'], spaceAfter=1, fontSize=11, leading=13))
-    styles.add(ParagraphStyle(name='SectionHeader', parent=styles['Heading2'], fontSize=12, spaceAfter=4, spaceBefore=6, textColor=theme['resume_header_color']))
-    styles.add(ParagraphStyle(name='NormalSmall', parent=styles['Normal'], fontSize=9, leading=11))
-    styles.add(ParagraphStyle(name='Date', parent=styles['Normal'], fontSize=8, textColor=colors.gray))
+    styles.add(ParagraphStyle(name='JobTitle', parent=styles['Heading2'], spaceAfter=1, fontSize=10, leading=12))
+    styles.add(ParagraphStyle(name='SectionHeader', parent=styles['Heading2'], fontSize=11, spaceAfter=2, spaceBefore=4, textColor=theme['resume_header_color']))
+    styles.add(ParagraphStyle(name='NormalSmall', parent=styles['Normal'], fontSize=8.5, leading=10))
+    styles.add(ParagraphStyle(name='Date', parent=styles['Normal'], fontSize=7.5, textColor=colors.gray))
     
     story = []
     
@@ -571,7 +638,7 @@ def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
     # User said "remove proving adress in cover letter", didn't explicitly remove from Resume, but I'll stick to Email/Phone/City for Resume to look pro)
     contact_info = f"{data.get('contact', {}).get('email', '')} | {data.get('contact', {}).get('phone', '')} | {candidate['location']}"
     story.append(Paragraph(contact_info, styles['NormalSmall']))
-    story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceAfter=8))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceAfter=4))
     
     # Summary
     if 'summary' in data:
@@ -594,7 +661,7 @@ def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
                     story.append(Paragraph(f"• {clean_text_formatting(item)}", styles['NormalSmall']))
             else:
                 story.append(Paragraph(clean_text_formatting(str(desc)), styles['NormalSmall']))
-            story.append(Spacer(1, 4))
+            story.append(Spacer(1, 2))
     
     # Projects
     if 'projects' in data:
@@ -617,11 +684,16 @@ def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
     if 'education' in data:
         header_text = "EDUCATION" if theme.get('resume_header_case') == 'UPPER' else "Education"
         story.append(Paragraph(header_text, styles['SectionHeader']))
-        edu = data['education']
-        story.append(Paragraph(f"<b>{edu.get('degree', 'Degree')}</b>", styles['NormalSmall']))
-        story.append(Paragraph(f"{edu.get('university', 'University')} | {edu.get('year', '')}", styles['Date']))
-        if 'details' in edu:
-            story.append(Paragraph(edu['details'], styles['NormalSmall']))
+        edu_data = data['education']
+        if not isinstance(edu_data, list):
+            edu_data = [edu_data]
+            
+        for edu in edu_data:
+            story.append(Paragraph(f"<b>{edu.get('degree', 'Degree')}</b>", styles['NormalSmall']))
+            story.append(Paragraph(f"{edu.get('university', 'University')} | {edu.get('year', '')}", styles['Date']))
+            if 'details' in edu:
+                story.append(Paragraph(edu['details'], styles['NormalSmall']))
+            story.append(Spacer(1, 1))
         
     # Skills & Certificates
     if 'skills' in data or 'certificates' in data:
@@ -636,7 +708,7 @@ def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
             
     # Languages
     if 'languages' in data:
-        story.append(Spacer(1, 2))
+        story.append(Spacer(1, 1))
         lang_str = "<b>Languages:</b> " + ", ".join(data['languages'])
         story.append(Paragraph(lang_str, styles['NormalSmall']))
     
@@ -675,7 +747,7 @@ def create_cl_pdf(candidate: Dict, content: str, theme: Dict) -> bytes:
     buffer.seek(0)
     return buffer.getvalue()
 
-def batch_generate(job_description: str, count: int, education_level: str, graduation_year: int, client):
+def batch_generate(job_description: str, count: int, education_level: str, graduation_year: int, target_country: str, client):
     """
     Orchestrates the full generation process using concurrent execution.
     """
@@ -690,7 +762,7 @@ def batch_generate(job_description: str, count: int, education_level: str, gradu
     
     # Parallelize the full profile generation (Resume + CL)
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(process_single_candidate, c, job_description, education_level, graduation_year, client) for c in candidates]
+        futures = [executor.submit(process_single_candidate, c, job_description, education_level, graduation_year, target_country, client) for c in candidates]
         
         for future in concurrent.futures.as_completed(futures):
             try:
@@ -725,4 +797,34 @@ def batch_generate(job_description: str, count: int, education_level: str, gradu
                 print(f"Error creating CL PDF for {cand['name']}: {e}")
             
     zip_buffer.seek(0)
-    return zip_buffer
+    return zip_buffer, results
+
+def answer_screening_question(candidate: Dict, resume_data: Dict, job_description: str, question: str, client) -> str:
+    """Answers an application screening question (e.g., from Indeed) using the candidate's resume and JD."""
+    prompt = f"""
+    You are {candidate['name']}, applying for a role based on the following Job Description:
+    {job_description}
+
+    Here is the content of your Resume (in structured JSON format for context):
+    {json.dumps(resume_data)}
+    
+    A job portal (like Indeed) is asking you an additional screening question. 
+    Answer it professionally, acting in the first person ("I").
+    Base all your facts, skills, and experience exactly on the Resume data provided.
+    If the question asks about a skill not on your resume, explain how your existing skills translate or state your willingness to learn, while remaining confident.
+    Keep the answer concise (2-4 sentences max), as these are typical quick screening inputs.
+
+    Question: {question}
+    """
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a professional job seeker answering an application screening question."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error answering question for {candidate['name']}: {e}")
+        return "Sorry, I could not generate an answer at this time."
