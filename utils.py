@@ -1,3 +1,5 @@
+
+
 import os
 import json
 import zipfile
@@ -44,225 +46,135 @@ def get_openai_client():
         return None
     return openai.OpenAI(api_key=api_key)
 
-STATIC_CANDIDATES = [
-   
+# REMOVED location from static candidates - now only contains name, gender, origin, email, phone
+STATIC_CANDIDATES =  [
   {
-    "name": "Ananya Rao",
-    "gender": "Female",
-    "origin": "Asian",
-    "location": "Berlin, Germany",
-    "university": "TU Berlin",
-    "email": "ananya.rao@example.com",
-    "phone": "+49 151 11111111"
-  },
-  {
-    "name": "Mei Lin Zhang",
-    "gender": "Female",
-    "origin": "Asian",
-    "location": "Munich, Germany",
-    "university": "TU Munich",
-    "email": "mei.zhang@example.com",
-    "phone": "+49 152 22222222"
-  },
-  {
-    "name": "Julia Schmidt",
-    "gender": "Female",
-    "origin": "White",
-    "location": "Hamburg, Germany",
-    "university": "RWTH Aachen",
-    "email": "julia.schmidt@example.com",
-    "phone": "+49 170 33333333"
-  },
-  {
-    "name": "Laura Hoffmann",
-    "gender": "Female",
-    "origin": "White",
-    "location": "Dresden, Germany",
-    "university": "TU Dresden",
-    "email": "laura.hoffmann@example.com",
-    "phone": "+49 171 44444444"
-  },
-  {
-    "name": "Amina Tesfaye",
-    "gender": "Female",
-    "origin": "African",
-    "location": "Frankfurt, Germany",
-    "university": "KIT Karlsruhe",
-    "email": "amina.tesfaye@example.com",
-    "phone": "+49 160 55555555"
-  },
-  {
-    "name": "Sofia Alvarez",
-    "gender": "Female",
-    "origin": "Latin American",
-    "location": "Cologne, Germany",
-    "university": "University of Cologne",
-    "email": "sofia.alvarez@example.com",
-    "phone": "+49 175 66666666"
-  },
-  {
-    "name": "Rahul Verma",
-    "gender": "Male",
-    "origin": "Asian",
-    "location": "Stuttgart, Germany",
-    "university": "University of Stuttgart",
-    "email": "rahul.verma@example.com",
-    "phone": "+49 151 77777777"
-  },
-  {
-    "name": "Hiroshi Tanaka",
-    "gender": "Male",
-    "origin": "Asian",
-    "location": "Darmstadt, Germany",
-    "university": "TU Darmstadt",
-    "email": "hiroshi.tanaka@example.com",
-    "phone": "+49 152 88888888"
-  },
-  {
-    "name": "Thomas Müller",
+    "name": "Jonas Schneider",
     "gender": "Male",
     "origin": "White",
-    "location": "Berlin, Germany",
-    "university": "TU Berlin",
-    "email": "thomas.mueller@example.com",
-    "phone": "+49 170 99999999"
+    "email": "jonasschneid1@outlook.com",
+    "phone": "+49 15510 118262"
   },
   {
-    "name": "Felix Koch",
+    "name": "Alexander Meyer",
     "gender": "Male",
     "origin": "White",
-    "location": "Munich, Germany",
-    "university": "TU Munich",
-    "email": "felix.koch@example.com",
-    "phone": "+49 171 10101010"
+    "email": "m.alexander2303@outlook.com",
+    "phone": "+49 1523 8425990"
   },
   {
-    "name": "Daniel Boateng",
+    "name": "Niklas Schmidt",
+    "gender": "Male",
+    "origin": "White",
+    "email": "nikschmidt22@hotmail.com",
+    "phone": "+49 163 2921406"
+  },
+  {
+    "name": "Marie Fischer",
+    "gender": "Female",
+    "origin": "White",
+    "email": "marie-fischerr@outlook.com",
+    "phone": "+49 1575 4611441"
+  },
+  {
+    "name": "Julia Weber",
+    "gender": "Female",
+    "origin": "White",
+    "email": "juliaweber00@hotmail.com",
+    "phone": "+49 176 25402552"
+  },
+  {
+    "name": "Katharina Müller",
+    "gender": "Female",
+    "origin": "White",
+    "email": "kath.muller@outlook.com",
+    "phone": "+49 1525 1769788"
+  },
+  {
+    "name": "Arjun Patel",
+    "gender": "Male",
+    "origin": "Asian",
+    "email": "patel.arj@outlook.com",
+    "phone": "+49 1522 6704107"
+  },
+  {
+    "name": "Rahul Sharma",
+    "gender": "Male",
+    "origin": "Asian",
+    "email": "sharma.rahul33@outlook.com",
+    "phone": "+49 1517 2332314"
+  },
+  {
+    "name": "Min Jun Jeong",
+    "gender": "Male",
+    "origin": "Asian",
+    "email": "jeong.minjun@outlook.com",
+    "phone": "+49 1522 7989642"
+  },
+  {
+    "name": "Priya Kumar",
+    "gender": "Female",
+    "origin": "Asian",
+    "email": "priyakumar81@outlook.com",
+    "phone": "+49 1521 6421918"
+  },
+  {
+    "name": "Seoyeon Kim",
+    "gender": "Female",
+    "origin": "Asian",
+    "email": "kim.seoyeon7@outlook.com",
+    "phone": "+49 176 43881053"
+  },
+  {
+    "name": "Minseo Choi",
+    "gender": "Female",
+    "origin": "Asian",
+    "email": "choi.min-seo@outlook.com",
+    "phone": "+49 176 74525750"
+  },
+  {
+    "name": "Santiago Ramirez",
     "gender": "Male",
     "origin": "African",
-    "location": "Berlin, Germany",
-    "university": "TU Berlin",
-    "email": "daniel.boateng@example.com",
-    "phone": "+49 160 11112222"
+    "email": "santis.ramirez@outlook.com",
+    "phone": "+49 176 60874514"
   },
   {
-    "name": "Omar Al-Hassan",
-    "gender": "Male",
-    "origin": "Middle Eastern",
-    "location": "Bonn, Germany",
-    "university": "University of Bonn",
-    "email": "omar.alhassan@example.com",
-    "phone": "+49 175 33334444"
-  },
-  
-  {
-    "name": "Priya Nair",
-    "gender": "Female",
-    "origin": "Asian",
-    "location": "Bremen, Germany",
-    "university": "University of Bremen",
-    "email": "priya.nair@example.com",
-    "phone": "+49 151 21212121"
-  },
-  {
-    "name": "Yuki Nakamura",
-    "gender": "Female",
-    "origin": "Asian",
-    "location": "Augsburg, Germany",
-    "university": "University of Augsburg",
-    "email": "yuki.nakamura@example.com",
-    "phone": "+49 152 23232323"
-  },
-  {
-    "name": "Hannah Keller",
-    "gender": "Female",
-    "origin": "White",
-    "location": "Freiburg, Germany",
-    "university": "University of Freiburg",
-    "email": "hannah.keller@example.com",
-    "phone": "+49 170 24242424"
-  },
-  {
-    "name": "Nina Bauer",
-    "gender": "Female",
-    "origin": "White",
-    "location": "Regensburg, Germany",
-    "university": "University of Regensburg",
-    "email": "nina.bauer@example.com",
-    "phone": "+49 171 25252525"
-  },
-  {
-    "name": "Leila Haddad",
-    "gender": "Female",
-    "origin": "Middle Eastern",
-    "location": "Mannheim, Germany",
-    "university": "University of Mannheim",
-    "email": "leila.haddad@example.com",
-    "phone": "+49 160 26262626"
-  },
-  {
-    "name": "Camila Rodriguez",
-    "gender": "Female",
-    "origin": "Latin American",
-    "location": "Kiel, Germany",
-    "university": "University of Kiel",
-    "email": "camila.rodriguez@example.com",
-    "phone": "+49 175 27272727"
-  },
-  {
-    "name": "Arjun Malhotra",
-    "gender": "Male",
-    "origin": "Asian",
-    "location": "Ulm, Germany",
-    "university": "Ulm University",
-    "email": "arjun.malhotra@example.com",
-    "phone": "+49 151 28282828"
-  },
-  {
-    "name": "Wei Chen",
-    "gender": "Male",
-    "origin": "Asian",
-    "location": "Potsdam, Germany",
-    "university": "University of Potsdam",
-    "email": "wei.chen@example.com",
-    "phone": "+49 152 29292929"
-  },
-  {
-    "name": "Jonas Krüger",
-    "gender": "Male",
-    "origin": "White",
-    "location": "Magdeburg, Germany",
-    "university": "Otto von Guericke University Magdeburg",
-    "email": "jonas.krueger@example.com",
-    "phone": "+49 170 30303030"
-  },
-  {
-    "name": "Sebastian Lang",
-    "gender": "Male",
-    "origin": "White",
-    "location": "Jena, Germany",
-    "university": "University of Jena",
-    "email": "sebastian.lang@example.com",
-    "phone": "+49 171 31313131"
-  },
-  {
-    "name": "Youssef Benali",
-    "gender": "Male",
-    "origin": "Middle Eastern",
-    "location": "Osnabrück, Germany",
-    "university": "University of Osnabrück",
-    "email": "youssef.benali@example.com",
-    "phone": "+49 160 32323232"
-  },
-  {
-    "name": "Lucas Pereira",
+    "name": "Matheus Pereira",
     "gender": "Male",
     "origin": "Latin American",
-    "location": "Erfurt, Germany",
-    "university": "University of Erfurt",
-    "email": "lucas.pereira@example.com",
-    "phone": "+49 175 33333333"
+    "email": "mathe.pereira@outlook.com",
+    "phone": "+49 15510 624789"
+  },
+  {
+    "name": "Emmanuel Adebayo",
+    "gender": "Male",
+    "origin": "Latin American",
+    "email": "emmanuel.adeb.work@outlook.com",
+    "phone": "+49 162 6664232"
+  },
+  {
+    "name": "Adriana Ferreira",
+    "gender": "Female",
+    "origin": "African",
+    "email": "adriana.ferreira.work@outlook.com",
+    "phone": "+49 176 76329485"
+  },
+  {
+    "name": "Maria Fernanda Reyes",
+    "gender": "Female",
+    "origin": "Latin American",
+    "email": "maria.fern.reyes@outlook.com",
+    "phone": "+49 162 1529823"
+  },
+  {
+    "name": "Chioma Okafor",
+    "gender": "Female",
+    "origin": "Latin American",
+    "email": "chioma.okafor4@outlook.com",
+    "phone": "+49 174 6723390"
   }
+
 ]
 
 COMPANY_POOL = [
@@ -275,10 +187,19 @@ COMPANY_POOL = [
     "Munich Re", "RWE", "ThyssenKrupp", "HeidelbergCement", "Fresenius", "Covestro"
 ]
 
+UNIVERSITY_POOL = [
+    "Technical University of Munich", "Technische Universität Berlin", 
+    "Ludwig-Maximilians-Universität München", "Karlsruhe Institute of Technology", 
+    "RWTH Aachen University", "Humboldt-Universität zu Berlin", 
+    "Universität Heidelberg", "Technical University of Darmstadt", 
+    "Universität Stuttgart", "Technische Universität Dresden", 
+    "Friedrich-Alexander-Universität Erlangen-Nürnberg", "Leibniz University Hannover"
+]
+
 COUNTRY_DATA = {
     "Germany": {
-        "cities": ["Berlin", "Munich", "Hamburg", "Frankfurt", "Stuttgart"],
-        "universities": ["TU Munich", "TU Berlin", "RWTH Aachen", "KIT Karlsruhe", "University of Heidelberg"],
+        "cities": ["Berlin", "Munich", "Hamburg", "Frankfurt", "Stuttgart", "Cologne", "Düsseldorf"],
+        "universities": ["Technical University of Munich", "Technische Universität Berlin", "Ludwig-Maximilians-Universität München", "Karlsruhe Institute of Technology", "RWTH Aachen University", "Humboldt-Universität zu Berlin", "Universität Heidelberg", "Technical University of Darmstadt", "Universität Stuttgart", "Technische Universität Dresden", "Friedrich-Alexander-Universität Erlangen-Nürnberg", "Leibniz University Hannover"],
         "companies": [
             "SAP", "Siemens", "BMW", "Allianz", "Volkswagen", "Mercedes-Benz", "Deutsche Telekom", 
             "BASF", "Bayer", "Munich Re", "Deutsche Bank", "Porsche", "Adidas", "Bosch", 
@@ -287,8 +208,8 @@ COUNTRY_DATA = {
         "language": "German"
     },
     "France": {
-        "cities": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"],
-        "universities": ["Sorbonne University", "Ecole Polytechnique", "Université PSL", "Telecom Paris", "CentraleSupélec"],
+        "cities": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Bordeaux", "Lille"],
+        "universities": ["Sorbonne University", "Ecole Polytechnique", "Université PSL", "Telecom Paris", "CentraleSupélec", "HEC Paris", "ESSEC Business School"],
         "companies": [
             "L'Oréal", "TotalEnergies", "Sanofi", "AXA", "BNP Paribas", "Capgemini", "Dassault Systèmes", 
             "Orange", "LVMH", "Airbus", "Michelin", "Renault", "Danone", "Kering", 
@@ -297,8 +218,8 @@ COUNTRY_DATA = {
         "language": "French"
     },
     "Italy": {
-        "cities": ["Rome", "Milan", "Naples", "Turin", "Florence"],
-        "universities": ["Politecnico di Milano", "Sapienza University of Rome", "University of Bologna", "University of Padua", "Politecnico di Torino"],
+        "cities": ["Rome", "Milan", "Naples", "Turin", "Florence", "Bologna", "Venice"],
+        "universities": ["Politecnico di Milano", "Sapienza University of Rome", "University of Bologna", "University of Padua", "Politecnico di Torino", "Bocconi University"],
         "companies": [
             "Enel", "Eni", "Stellantis", "Intesa Sanpaolo", "Leonardo", "Pirelli", "Ferrari", "Prada", 
             "UniCredit", "Telecom Italia", "Generali", "Poste Italiane", "Ferrero", "Barilla", 
@@ -307,8 +228,8 @@ COUNTRY_DATA = {
         "language": "Italian"
     },
     "Netherlands": {
-        "cities": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"],
-        "universities": ["Delft University of Technology", "University of Amsterdam", "Eindhoven University of Technology", "Leiden University", "Utrecht University"],
+        "cities": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven", "Groningen", "Maastricht"],
+        "universities": ["Delft University of Technology", "University of Amsterdam", "Eindhoven University of Technology", "Leiden University", "Utrecht University", "Erasmus University Rotterdam"],
         "companies": [
             "ASML", "Philips", "Shell", "Unilever", "Heineken", "Adyen", "Booking.com", "ING", 
             "Ahold Delhaize", "KPN", "NXP Semiconductors", "Randstad", "Aegon", "AkzoNobel", 
@@ -317,8 +238,8 @@ COUNTRY_DATA = {
         "language": "Dutch"
     },
     "Finland": {
-        "cities": ["Helsinki", "Espoo", "Tampere", "Vantaa", "Oulu"],
-        "universities": ["University of Helsinki", "Aalto University", "Tampere University", "University of Oulu", "University of Turku"],
+        "cities": ["Helsinki", "Espoo", "Tampere", "Vantaa", "Oulu", "Turku", "Jyväskylä"],
+        "universities": ["University of Helsinki", "Aalto University", "Tampere University", "University of Oulu", "University of Turku", "LUT University"],
         "companies": [
             "Nokia", "Kone", "Wärtsilä", "Neste", "Stora Enso", "Supercell", "Rovio", "Tietoevry", 
             "UPM-Kymmene", "Sampo Group", "Nordea", "Fortum", "Kesko", "Valmet", 
@@ -349,8 +270,6 @@ def get_random_theme():
         'cl_header_color': random.choice(colors_list)
     }
 
-
-
 def generate_demographic_data(n: int, client) -> List[Dict]:
     candidates = STATIC_CANDIDATES
 
@@ -368,7 +287,7 @@ def generate_demographic_data(n: int, client) -> List[Dict]:
     selected.extend(get_by_origin(females, ['White'], 1))
     selected.extend(get_by_origin(
         females,
-        ['Middle Eastern', 'African', 'Latin American'],
+        [ 'African', 'Latin American'],
         1
     ))
 
@@ -377,7 +296,7 @@ def generate_demographic_data(n: int, client) -> List[Dict]:
     selected.extend(get_by_origin(males, ['White'], 1))
     selected.extend(get_by_origin(
         males,
-        ['Middle Eastern', 'African', 'Latin American'],
+        [ 'African', 'Latin American'],
         1
     ))
 
@@ -407,16 +326,22 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     # Origin context for diversity-aware generation
     origin_context = candidate.get('origin', 'General')
     
+    # Get location from target country
+    candidate_city = random.choice(COUNTRY_DATA[target_country]["cities"])
+    candidate_location = f"{candidate_city}, {target_country}"
+    
     prompt = f"""
     You are an expert ATS-optimized resume writer specializing in the job market.
     Generate professional, dense, and high-quality resume content for {candidate['name']} aiming for a one-page professional standard.
     
     Candidate Context:
-    - Location: {candidate['location']}
+    - Location: {candidate_location}
     - Dynamic Context (Origin): {origin_context}. (Use to subtly inform style if relevant, but keep professional).
-    - Education: {education_level} from {candidate['university']}.
-      **If the education level is a Master's degree, strongly ensure you add a "Bachelor of Science in Computer Science" from a real {target_country} university as an additional item in the education array.**
-      **If the education level is already a Bachelor's degree, ensure it is strictly named "Bachelor of Science in Computer Science".**
+    - Education: {education_level} from {candidate.get('masters_university', 'a university')} in {target_country}. 
+      **Master's University: Use ONLY this university for the Master's degree: {candidate.get('masters_university', 'N/A')}**
+      **If the education level is a Master's degree, strongly ensure you add a "Bachelor of Science in Computer Science" from {candidate.get('bachelors_university', 'a university')} as an additional item in the education array.**
+      **Bachelor's University: Use ONLY this university for the Bachelor's degree: {candidate.get('bachelors_university', 'N/A')}**
+      **If the education level is already a Bachelor's degree, ensure it is strictly named "Bachelor of Science in Computer Science" from {candidate.get('bachelors_university', 'N/A')}.**
     - Graduation Year: {graduation_year} (All dates should align with this).
     - Experience: EXACTLY 4 meaningful internships/work experiences relevant to the job.
       **Ensure all internship dates are structured chronologically, ending before or in {graduation_year}.**
@@ -444,7 +369,7 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     "education": [
         {{
             "degree": "{education_level}",
-            "university": "{candidate['university']}",
+            "university": "{candidate.get('masters_university', '[University Name]')}",
             "year": "{graduation_year}",
             "details": "Relevant coursework or specialization"
         }}
@@ -514,9 +439,6 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
   • JSON structure must remain EXACTLY the same.
   • Formatting tags (<bold>, <italic>) should appear ONLY inside string values.
   • Maintain ATS compatibility.
-
-
-
     """
     
     try:
@@ -533,6 +455,10 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
 
 def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_description: str, education_level: str, target_country: str, client) -> str:
     company1 = resume_data.get('experience', [{}])[0].get('company', 'Unknown')
+    
+    # Get location from target country
+    candidate_city = random.choice(COUNTRY_DATA[target_country]["cities"])
+    candidate_location = f"{candidate_city}, {target_country}"
     
     prompt = f"""
     Write a highly professional, full one-page cover letter for {candidate['name']} applying for the given role.
@@ -556,9 +482,9 @@ LENGTH & STRUCTURE REQUIREMENTS:
 
 CONTEXT (MUST BE EXPLICITLY USED):
 - Candidate Name: {candidate['name']}
-
-- Education: {education_level} from {candidate['university']}  
-  (Explicitly mention the degree level in a professional academic context. If the education level is a Master's degree, you MUST also explicitly mention their "Bachelor of Science in Computer Science" from a real {target_country} university. If they have a Bachelor's, refer to it strictly as "Bachelor of Science in Computer Science".)
+- Location: {candidate_location}
+- Education: {education_level} from {candidate.get('masters_university', 'a top-tier university')}
+  (Explicitly mention the degree level in a professional academic context. Use {candidate.get('masters_university', 'a university')} as their current university. If the education level is a Master's degree, you MUST also explicitly mention their "Bachelor of Science in Computer Science" from {candidate.get('bachelors_university', 'a university')}. If they have a Bachelor's, refer to it strictly as "Bachelor of Science in Computer Science" from {candidate.get('bachelors_university', 'a university')}.)
 - Professional Experience:
   • Highlight relevant responsibilities, achievements, and impact at {company1}.
 - Adapt skills, tools, and experience strictly based on the Job Description below.
@@ -574,8 +500,6 @@ JOB DESCRIPTION (PRIMARY SOURCE OF TRUTH):
 END REQUIREMENT:
 - End with a professional closing sentence suitable for {target_country} business culture
   (e.g., expressing interest in further discussion).
-
-
     """
     try:
         response = client.chat.completions.create(
@@ -594,10 +518,15 @@ def process_single_candidate(candidate: Dict, job_description: str, education_le
     import copy
     candidate = copy.deepcopy(candidate)
     
-    # Override candidate location and university
+    # Override candidate location and university based on target country
     c_data = COUNTRY_DATA[target_country]
     candidate['location'] = f"{random.choice(c_data['cities'])}, {target_country}"
-    candidate['university'] = random.choice(c_data['universities'])
+    # Use the global university pool for all candidates as requested
+    # Select distinct universities for Masters and Bachelors if possible
+    universities = random.sample(UNIVERSITY_POOL, 2)
+    candidate['masters_university'] = universities[0]
+    candidate['bachelors_university'] = universities[1]
+    candidate['university'] = candidate['masters_university'] # For compatibility
     
     theme = get_random_theme()
     resume_data = generate_resume_content(candidate, job_description, education_level, graduation_year, target_country, client)
@@ -634,8 +563,7 @@ def create_resume_pdf(candidate: Dict, data: Dict, theme: Dict) -> bytes:
         alignment=theme['resume_name_alignment']
     )
     story.append(Paragraph(candidate['name'], name_style))
-    # Contact info: Email | Phone (No location if user doesn't want address here, but Resume usually has it. 
-    # User said "remove proving adress in cover letter", didn't explicitly remove from Resume, but I'll stick to Email/Phone/City for Resume to look pro)
+    # Contact info: Email | Phone | Location
     contact_info = f"{data.get('contact', {}).get('email', '')} | {data.get('contact', {}).get('phone', '')} | {candidate['location']}"
     story.append(Paragraph(contact_info, styles['NormalSmall']))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceAfter=4))
