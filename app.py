@@ -21,8 +21,6 @@ if not os.getenv("OPENAI_API_KEY"):
 target_country = st.sidebar.selectbox("Target Country", ["Germany", "France", "Italy", "Netherlands", "Finland"])
 num_candidates = st.sidebar.number_input("Number of Candidates", min_value=2, max_value=6, value=6, step=1)
 education_level = st.sidebar.selectbox("Education Level", ["Master of Science in Computer Science", "Bachelor of Science in Computer Science"])
-graduation_year = st.sidebar.number_input("Graduation Year", min_value=2020, max_value=2030, value=2025, step=1)
-
 # Main UI
 st.subheader("1. Job Description")
 job_description = st.text_area(
@@ -43,11 +41,10 @@ if generate_btn:
     else:
         with st.spinner(f"Creating {num_candidates} detailed candidate profiles for {target_country}... This may take a minute."):
             try:
-                zip_file, candidates_data = batch_generate(
+                zip_file, candidates_data, zip_filename = batch_generate(
                     job_description, 
                     int(num_candidates), 
                     education_level, 
-                    int(graduation_year), 
                     target_country, 
                     client
                 )
@@ -55,6 +52,7 @@ if generate_btn:
                     st.session_state['generated_zip'] = zip_file
                     st.session_state['candidates_data'] = candidates_data
                     st.session_state['job_description'] = job_description  # Store for chatbot
+                    st.session_state['zip_filename'] = zip_filename
                     st.success(f"✅ Generation Complete! Created {len(candidates_data)} candidates for {target_country}.")
                     
                     # Show quick preview of generated candidates
@@ -73,7 +71,7 @@ if 'generated_zip' in st.session_state:
     st.download_button(
         label="📥 Download All Resumes & Cover Letters (ZIP)",
         data=st.session_state['generated_zip'],
-        file_name=f"applications_{target_country.lower()}_{graduation_year}.zip",
+        file_name=st.session_state.get('zip_filename', "applications.zip"),
         mime="application/zip"
     )
 
