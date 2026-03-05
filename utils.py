@@ -310,6 +310,11 @@ def generate_demographic_data(n: int, client) -> List[Dict]:
     return selected
 
 def generate_resume_content(candidate: Dict, job_description: str, education_level: str, target_country: str, client) -> Dict:
+    # Current date context
+    current_date_obj = datetime.now()
+    current_month_year = current_date_obj.strftime("%B %Y")
+    current_year = current_date_obj.year
+
     # Language Rule: Check if target language is explicitly mentioned in JD (case-insensitive)
     target_lang = COUNTRY_DATA[target_country]["language"]
     
@@ -334,6 +339,32 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     candidate_city = random.choice(COUNTRY_DATA[target_country]["cities"])
     candidate_location = f"{candidate_city}, {target_country}"
     
+    education_json_template = ""
+    if "Master" in education_level:
+        education_json_template = f"""[
+        {{
+            "degree": "Master of Science in Computer Science",
+            "university": "{candidate.get('masters_university', 'University')}",
+            "year": "YYYY",
+            "details": "Relevant coursework or specialization"
+        }},
+        {{
+            "degree": "Bachelor of Science in Computer Science",
+            "university": "{candidate.get('bachelors_university', 'University')}",
+            "year": "YYYY",
+            "details": "..."
+        }}
+    ]"""
+    else:
+        education_json_template = f"""[
+        {{
+            "degree": "Bachelor of Science in Computer Science",
+            "university": "{candidate.get('bachelors_university', 'University')}",
+            "year": "YYYY",
+            "details": "Relevant coursework or specialization"
+        }}
+    ]"""
+
     prompt = f"""
     You are an expert ATS-optimized resume writer specializing in the job market.
     Generate professional, dense, and high-quality resume content for {candidate['name']} aiming for a one-page professional standard.
@@ -341,7 +372,7 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     Candidate Context:
     - Location: {candidate_location}
     - Dynamic Context (Origin): {origin_context}. (Use to subtly inform style if relevant, but keep professional).
-    - Current Year: 2026
+    - Current Date: {current_month_year}
     - Education: {education_level}
     
     Education Strictness Rules:
@@ -358,17 +389,50 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
     Experience & Role Identification:
     1. Identify the **Target Role** (e.g., "Data Engineer", "Technical Lead") directly from the Job Description.
     2. Analyze the Job Description to identify required years of experience (e.g., "3 years of experience", "Senior level").
-    3. Calculate the "Graduation Year" as: 2026 - (Required Experience Years).
+    3. Calculate the "Graduation Year" as: {current_year} - (Required Experience Years).
     4. If no specific years are mentioned, assume 2 years for a Master's and 0-1 years for a Bachelor's.
     5. **STRICT COUNT - Experience**: You MUST generate EXACTLY 4 professional experience entries sum to the exact duration of experience required by the job description.
     6. **EXPERIENCE SPLIT**:
-        - If JD requires 0-1 years: Use 4 Internships/Working Student roles.
-        - If JD requires 2-4 years: Use 2 Full-time roles and 2 Internships.
-        - If JD requires 5+ years: Use 3 Full-time roles and 1 Internship.
+        - If JD requires 0-1 years: Use 1 Full-time/Junior role and 2-3 Internships/Working Student roles.
+        - If JD requires 2-4 years: Use 2 Full-time roles and 1-2 Internships.
+        - If JD requires 5+ years: Use 3-4 Full-time roles and 0-1 Internship.
     7. **STRICT COUNT - Projects**: You MUST generate EXACTLY 4 key projects.
     8. Graduation Year should be the year the candidate completed the {education_level}. 
     9. For senior roles, include specific roles like "Technical Lead" or "Senior [Role]" at companies from the pool.
     10. **DATE FORMATTING**: All durations/dates in the experience section MUST use full month names (e.g., "June 2022 - August 2024"). DO NOT use month numbers (e.g., "06/2022").
+    11. **STRICT DATE RULE**: DO NOT generate any dates in the future (after {current_month_year}).
+        - If a job is ongoing, use "Present" as the end date (e.g., "January 2024 - Present").
+        - If a job starts in {current_year}, it MUST NOT end after {current_month_year} unless it is "Present".
+        - Example: "January {current_year} - Present" is valid. "August {current_year}" is INVALID.
+    12. **CHRONOLOGICAL ROLE RULES**:
+        - "Working Student" roles MUST follow this STRICT rule:
+
+- The role MUST end EXACTLY in **December of the year immediately before the Graduation Year**.
+
+Example:
+If Graduation Year = 2024
+Working Student end date MUST be:
+"December 2023"
+
+Valid:
+"March 2023 - December 2023"
+"July 2022 - December 2023"
+
+INVALID:
+"March 2023 - August 2023"
+"March 2023 - November 2023"
+"January 2024 - May 2024"
+
+Working Student roles MUST NEVER extend into the Graduation Year.
+        - "Full-time" or "Junior" roles MUST occur **after** the Graduation Year. 
+        - The **most recent role** MUST be a Full-time/Junior role (not an internship) and MUST end in "**Present**" (unless the candidate is a very fresh grad with 0 months experience).
+    13. **NO GAP RULE**: Ensure there are **ABSOLUTELY NO gaps** in the work experience timeline. 
+        - The end date of one role should be the same month or the month immediately preceding the start date of the next role.
+        - Sequence the roles logically back-to-back leading to the current date.
+    14. **NO OVERLAPPING DATES**: Ensure there are **NO overlapping dates** in the work experience timeline. 
+        - One job must end before or in the same month that the next job starts.
+        - Two full-time jobs cannot occur at the same time.
+        - A "Working Student" role cannot overlap with a "Full-time" role.
     
     Job Description:
     {job_description}
@@ -378,26 +442,60 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
        - Use companies of a **similar market level/ranking**.
        - Suggested companies to draw from (or use similar): {suggested_companies}.
        - Do NOT use fictional names like "TechSolutions Inc". Use real names relevant to the location/industry.
-    2. **CONSISTENT EXPERIENCE LEVEL**: Experience level/seniority must be comparable (4 internships/working student roles).
+    2. **CONSISTENT EXPERIENCE LEVEL**: Experience level/seniority must be adjusted to the JD requirements.
     3. **ATS Optimization**: Keywords must match the JD.
     4. Each **internship/work experience** must contain **3–4 achievement-focused bullet points**.
     5. Each **project** must be HIGHLY RELEVANT to the Job Description with a **3–4 line technical description**.
     6. Maintain a concise **one-page density**.
     {language_instruction}
     8. **Sections**: Contact, Summary, Education, Experience, Projects, Skills, Certificates, Languages.
+    PROJECT TITLE PROFESSIONALISM RULES (MANDATORY):
+
+9. Project titles MUST be written in a PROFESSIONAL, resume-appropriate format.
+10. Titles MUST sound like real engineering or enterprise projects and NOT like tutorials or coursework.
+
+STRICTLY AVOID titles such as:
+- "RAG Implementation"
+- "Building CI/CD Pipeline"
+- "Chatbot Project"
+- "Machine Learning Model"
+- "Data Analysis Project"
+
+INSTEAD, use professional titles such as:
+- "Enterprise AI Knowledge Retrieval Platform"
+- "Scalable Customer Intelligence Data Pipeline"
+- "Automated Fraud Detection System"
+- "Cloud-Native Microservices Deployment Architecture"
+- "Real-Time Financial Risk Prediction Engine"
+- "AI-Powered Document Intelligence System"
+
+11. Titles MUST follow one of these professional structures:
+   - [Business Problem] + [System / Platform]
+   - [Domain] + [Analytics / Intelligence System]
+   - [Enterprise / Scalable / Automated] + [Platform / Engine / Framework]
+
+Examples of acceptable formats:
+- "Enterprise Document Intelligence Platform"
+- "Scalable Real-Time Fraud Detection System"
+- "AI-Powered Customer Insights Platform"
+- "Distributed Data Processing Framework for Financial Analytics"
+
+4. Each project MUST appear like a real production-grade or enterprise engineering project relevant to the Job Description.
+
+5. Project descriptions MUST focus on:
+   - architecture
+   - scalability
+   - performance optimization
+   - integration with APIs or data platforms
+   - measurable technical outcomes.
+
+6. Projects MUST use strong technical terminology aligned with the Job Description keywords.
     
     Output Format (JSON):
     {{
     "contact": {{ "email": "email_address", "phone": "phone_number" }},
     "summary": "3–4 line ATS-optimized professional summary tailored to the job.",
-    "education": [
-        {{
-            "degree": "{education_level}",
-            "university": "{candidate.get('masters_university', '[University Name]')}",
-            "year": "Calculated Graduation Year",
-            "details": "Relevant coursework or specialization"
-        }}
-    ],
+    "education": {education_json_template},
     "experience": [
         {{
             "company": "Real Company Name 1",
@@ -464,6 +562,48 @@ def generate_resume_content(candidate: Dict, job_description: str, education_lev
   • Formatting tags (<bold>, <italic>) should appear ONLY inside string values.
   • Maintain ATS compatibility.
   • The "year" in education must be a specific year (e.g., "2022") calculated as explained above.
+  EXPERIENCE TIMELINE VALIDATION (MANDATORY FINAL STEP):
+
+After generating the experience entries, you MUST perform a final validation before producing the JSON output.
+
+1. Extract all experience durations and convert them internally into a chronological timeline.
+
+2. Verify the following conditions:
+
+   A. NO GAP RULE
+   - There must be NO gaps between jobs.
+   - If one job ends in "June 2022", the next job must start in:
+        "June 2022" OR "July 2022".
+   - Larger gaps are STRICTLY forbidden.
+
+   B. NO OVERLAP RULE
+   - Two jobs MUST NOT overlap.
+   - Example INVALID:
+        "June 2022 – March 2023"
+        "January 2023 – December 2023"
+
+   C. CHRONOLOGICAL ORDER
+   - Roles must be ordered from MOST RECENT to OLDEST.
+   - The last role MUST end in "Present".
+
+   D. WORKING STUDENT RULE
+   - Working Student roles MUST end exactly in:
+        "December (Graduation Year - 1)"
+
+   E. FULL TIME RULE
+   - Full-time roles MUST start AFTER the Graduation Year.
+
+3. If ANY rule is violated:
+   - Automatically adjust the start/end dates to fix the timeline.
+   - Ensure experience still equals the required years.
+
+4. Only after ALL rules pass validation should the JSON output be generated.
+
+5. The final experience timeline MUST be:
+   - continuous
+   - gap-free
+   - non-overlapping
+   - chronologically correct.
     """
     
     try:
@@ -485,10 +625,14 @@ def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_descri
     candidate_city = random.choice(COUNTRY_DATA[target_country]["cities"])
     candidate_location = f"{candidate_city}, {target_country}"
     
+    current_date_obj = datetime.now()
+    current_month_year = current_date_obj.strftime("%B %Y")
+
     prompt = f"""
-    Write a highly professional, full one-page cover letter for {candidate['name']} applying for the given role.
-    Role: Identified from JD.
-    Current Year: 2026.
+  
+Write a highly professional ONE-PAGE cover letter for {candidate['name']} applying for the given role.
+Role: Identified from JD.
+Current Date: {current_month_year}.
 
 CRITICAL OUTPUT RULES (MANDATORY):
 1. START DIRECTLY with a formal salutation such as:
@@ -498,35 +642,74 @@ CRITICAL OUTPUT RULES (MANDATORY):
 4. DO NOT include meta-comments, explanations, or notes of any kind.
 5. The output must read as a COMPLETE, FINAL cover letter ready for submission.
 
-LENGTH & STRUCTURE REQUIREMENTS:
-- The cover letter must be approximately ONE FULL PAGE (900-1000 words).
-- Use clear professional paragraphing:
-  • Opening paragraph: role interest + alignment with company
-  • 2–3 body paragraphs: skills, impact, experience, and value
-  • Closing paragraph: motivation, availability, and professional sign-off
-- Maintain strong logical flow and business clarity.
-- Avoid bullet points; use polished paragraph prose.
+STRICT LENGTH & STRUCTURE RULES:
+- The cover letter MUST contain EXACTLY **4 paragraphs**.
+- Each paragraph should contain **8 sentences**.
+- Total length should approximate **one professional page (700 words)**.
+- Do NOT create extra paragraphs before or after the closing.
+- Do NOT use bullet points or lists.
+- Use polished professional prose only.
 
-CONTEXT (MUST BE EXPLICITLY USED):
+PARAGRAPH STRUCTURE (MANDATORY):
+
+Paragraph 1 – Introduction
+• Express interest in the role identified from the Job Description.
+• Briefly introduce {candidate['name']}.
+• Mention location: {candidate_location}.
+• Connect motivation to the company/industry.
+
+Paragraph 2 – Education & Technical Foundation
+• Mention {education_level} from {candidate.get('masters_university', 'a university')}.
+• If Master's level, also mention the **Bachelor of Science in Computer Science** from {candidate.get('bachelors_university', 'a university')}.
+• Connect academic training to the job requirements.
+
+Paragraph 3 – Professional Experience & Impact
+• Highlight achievements and responsibilities at {company1}.
+• Emphasize technologies, tools, and impact relevant to the Job Description.
+• Include measurable results where possible.
+
+Paragraph 4 – Closing & Motivation
+• Reinforce interest in contributing to the organization.
+• Emphasize long-term motivation and professional value.
+• Mention openness to further discussion and interviews.
+• End with a strong professional closing sentence.
+
+STRICT CLOSING FORMAT (MANDATORY):
+
+After the final sentence of paragraph 4, the letter MUST end EXACTLY with  Mit freundlichen Grüßen:
+Mit freundlichen Grüßen,
+{candidate['name']}
+
+RULES:
+- The candidate name MUST appear on the line directly below "Sincerely,".
+- Do NOT omit the candidate name.
+- Do NOT add any text after the candidate name.
+- Do NOT use other closings like "Best regards" or "Kind regards".
+
+CONTEXT (MUST BE USED):
 - Candidate Name: {candidate['name']}
 - Location: {candidate_location}
-- Education: {education_level} from {candidate.get('masters_university', 'a top-tier university')}
-  (Explicitly mention the degree level in a professional academic context. Use {candidate.get('masters_university', 'a university')} as their current university. If the education level is a Master's degree, you MUST also explicitly mention their "Bachelor of Science in Computer Science" from {candidate.get('bachelors_university', 'a university')}. If they have a Bachelor's, refer to it strictly as "Bachelor of Science in Computer Science" from {candidate.get('bachelors_university', 'a university')}.)
-- Professional Experience:
-  • Highlight relevant responsibilities, achievements, and impact at {company1}.
-- Adapt skills, tools, and experience strictly based on the Job Description below.
+- Education: {education_level}
+- Professional Experience: highlight work at {company1}
 
 LANGUAGE & TONE:
 - Tone must be formal, persuasive, and aligned with {target_country} corporate communication standards.
 - Confident but not exaggerated; factual, precise, and impact-driven.
-- **DO NOT MENTION LANGUAGE SKILLS**. Do not say "I speak English" or "I speak German". Focus ONLY on technical/domain skills.
+- **DO NOT MENTION LANGUAGE SKILLS** (do not mention English, German, etc.).
 
 JOB DESCRIPTION (PRIMARY SOURCE OF TRUTH):
 {job_description}
 
-END REQUIREMENT:
-- End with a professional closing sentence suitable for {target_country} business culture
-  (e.g., expressing interest in further discussion).
+FINAL VALIDATION BEFORE OUTPUT:
+1. Ensure the letter contains EXACTLY 4 paragraphs.
+2. Ensure each paragraph contains 10–12 sentences.
+3. Ensure the closing appears EXACTLY as:
+
+ Mit freundlichen Grüßen,
+{candidate['name']}
+
+4. If the candidate name is missing after "Sincerely,", regenerate the closing correctly.
+
     """
     try:
         response = client.chat.completions.create(
@@ -788,3 +971,11 @@ def answer_screening_question(candidate: Dict, resume_data: Dict, job_descriptio
     except Exception as e:
         print(f"Error answering question for {candidate['name']}: {e}")
         return "Sorry, I could not generate an answer at this time."
+
+
+
+
+
+
+
+
