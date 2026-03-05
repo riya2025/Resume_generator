@@ -629,7 +629,6 @@ def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_descri
     current_month_year = current_date_obj.strftime("%B %Y")
 
     prompt = f"""
-  ""
   
 Write a highly professional ONE-PAGE cover letter for {candidate['name']} applying for the given role.
 
@@ -716,9 +715,6 @@ Mit freundlichen Grüßen,
 
 OUTPUT:
 Return ONLY the final cover letter."""
-
-
-    """
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
@@ -979,7 +975,6 @@ def answer_screening_question(candidate: Dict, resume_data: Dict, job_descriptio
     except Exception as e:
         print(f"Error answering question for {candidate['name']}: {e}")
         return "Sorry, I could not generate an answer at this time."
-
 
 
 
