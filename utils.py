@@ -629,9 +629,11 @@ def generate_cover_letter_content(candidate: Dict, resume_data: Dict, job_descri
     current_month_year = current_date_obj.strftime("%B %Y")
 
     prompt = f"""
+  ""
   
 Write a highly professional ONE-PAGE cover letter for {candidate['name']} applying for the given role.
-Role: Identified from JD.
+
+Role: Identified from the Job Description.
 Current Date: {current_month_year}.
 
 CRITICAL OUTPUT RULES (MANDATORY):
@@ -644,8 +646,8 @@ CRITICAL OUTPUT RULES (MANDATORY):
 
 STRICT LENGTH & STRUCTURE RULES:
 - The cover letter MUST contain EXACTLY **4 paragraphs**.
-- Each paragraph should contain **8 sentences**.
-- Total length should approximate **one professional page (700 words)**.
+- Each paragraph MUST contain **exactly 6 sentences**.
+- Total word count MUST be **between 550 and 600 words** so that it fits one professional page.
 - Do NOT create extra paragraphs before or after the closing.
 - Do NOT use bullet points or lists.
 - Use polished professional prose only.
@@ -656,11 +658,11 @@ Paragraph 1 – Introduction
 • Express interest in the role identified from the Job Description.
 • Briefly introduce {candidate['name']}.
 • Mention location: {candidate_location}.
-• Connect motivation to the company/industry.
+• Connect motivation to the company or industry.
 
 Paragraph 2 – Education & Technical Foundation
 • Mention {education_level} from {candidate.get('masters_university', 'a university')}.
-• If Master's level, also mention the **Bachelor of Science in Computer Science** from {candidate.get('bachelors_university', 'a university')}.
+• If Master's level, also mention the Bachelor of Science in Computer Science from {candidate.get('bachelors_university', 'a university')}.
 • Connect academic training to the job requirements.
 
 Paragraph 3 – Professional Experience & Impact
@@ -676,12 +678,13 @@ Paragraph 4 – Closing & Motivation
 
 STRICT CLOSING FORMAT (MANDATORY):
 
-After the final sentence of paragraph 4, the letter MUST end EXACTLY with  Mit freundlichen Grüßen:
+After the final sentence of paragraph 4, the letter MUST end EXACTLY with:
+
 Mit freundlichen Grüßen,
 {candidate['name']}
 
 RULES:
-- The candidate name MUST appear on the line directly below "Sincerely,".
+- The candidate name MUST appear on the line directly below "Mit freundlichen Grüßen,".
 - Do NOT omit the candidate name.
 - Do NOT add any text after the candidate name.
 - Do NOT use other closings like "Best regards" or "Kind regards".
@@ -695,20 +698,25 @@ CONTEXT (MUST BE USED):
 LANGUAGE & TONE:
 - Tone must be formal, persuasive, and aligned with {target_country} corporate communication standards.
 - Confident but not exaggerated; factual, precise, and impact-driven.
-- **DO NOT MENTION LANGUAGE SKILLS** (do not mention English, German, etc.).
+- DO NOT mention language skills (do not mention English, German, etc.).
 
 JOB DESCRIPTION (PRIMARY SOURCE OF TRUTH):
 {job_description}
 
-FINAL VALIDATION BEFORE OUTPUT:
-1. Ensure the letter contains EXACTLY 4 paragraphs.
-2. Ensure each paragraph contains 10–12 sentences.
-3. Ensure the closing appears EXACTLY as:
+FINAL VALIDATION (MANDATORY BEFORE OUTPUT):
+1. Verify that the letter contains EXACTLY 4 paragraphs.
+2. Verify that each paragraph contains EXACTLY 6 sentences.
+3. Verify the total word count is between 550 and 600  words.
+4. Verify the closing appears EXACTLY as:
 
- Mit freundlichen Grüßen,
+Mit freundlichen Grüßen,
 {candidate['name']}
 
-4. If the candidate name is missing after "Sincerely,", regenerate the closing correctly.
+5. If ANY rule is violated, regenerate the cover letter before producing the final answer.
+
+OUTPUT:
+Return ONLY the final cover letter."""
+
 
     """
     try:
@@ -971,6 +979,7 @@ def answer_screening_question(candidate: Dict, resume_data: Dict, job_descriptio
     except Exception as e:
         print(f"Error answering question for {candidate['name']}: {e}")
         return "Sorry, I could not generate an answer at this time."
+
 
 
 
