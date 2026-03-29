@@ -442,6 +442,7 @@ Working Student roles MUST NEVER extend into the Graduation Year.
        - Use companies of a **similar market level/ranking**.
        - Suggested companies to draw from (or use similar): {suggested_companies}.
        - Do NOT use fictional names like "TechSolutions Inc". Use real names relevant to the location/industry.
+       - STRICT RULE: The candidate's past and current companies MUST NOT be the same company they are applying to (the company mentioned in the Job Description). Ensure they are distinct.
     2. **CONSISTENT EXPERIENCE LEVEL**: Experience level/seniority must be adjusted to the JD requirements.
     3. **ATS Optimization**: Keywords must match the JD.
     4. Each **internship/work experience** must contain **3–4 achievement-focused bullet points**.
@@ -656,7 +657,6 @@ PARAGRAPH STRUCTURE (MANDATORY):
 Paragraph 1 – Introduction
 • Express interest in the role identified from the Job Description.
 • Briefly introduce {candidate['name']}.
-• Mention location: {candidate_location}.
 • Connect motivation to the company or industry.
 
 Paragraph 2 – Education & Technical Foundation
@@ -690,9 +690,8 @@ RULES:
 
 CONTEXT (MUST BE USED):
 - Candidate Name: {candidate['name']}
-- Location: {candidate_location}
 - Education: {education_level}
-- Professional Experience: highlight work at {company1}
+- Professional Experience: highlight work at {company1} (MUST be distinct from the applying company)
 
 LANGUAGE & TONE:
 - Tone must be formal, persuasive, and aligned with {target_country} corporate communication standards.
